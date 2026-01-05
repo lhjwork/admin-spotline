@@ -12,7 +12,7 @@ import {
   ToggleRight,
   Plus
 } from 'lucide-react'
-import { useForm } from 'react-hook-form'
+import StoreFormModal from '../components/StoreFormModal'
 
 const CATEGORIES = [
   { value: '', label: '전체 카테고리' },
@@ -31,167 +31,6 @@ const STATUS_OPTIONS = [
   { value: 'inactive', label: '비활성' }
 ]
 
-function CreateStoreModal({ isOpen, onClose, onSuccess }) {
-  const { register, handleSubmit, formState: { errors }, reset } = useForm()
-  
-  const createMutation = useMutation(
-    (data) => storeAPI.createStore(data),
-    {
-      onSuccess: () => {
-        onSuccess()
-        onClose()
-        reset()
-      }
-    }
-  )
-
-  const onSubmit = (data) => {
-    // 좌표 변환
-    if (data.coordinates) {
-      const [lng, lat] = data.coordinates.split(',').map(coord => parseFloat(coord.trim()))
-      data.location = {
-        ...data.location,
-        coordinates: {
-          type: 'Point',
-          coordinates: [lng, lat]
-        }
-      }
-      delete data.coordinates
-    }
-    
-    createMutation.mutate(data)
-  }
-
-  if (!isOpen) return null
-
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen px-4">
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={onClose} />
-        
-        <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-screen overflow-y-auto">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">새 매장 등록</h3>
-          
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  매장명 *
-                </label>
-                <input
-                  {...register('name', { required: '매장명을 입력하세요' })}
-                  type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                />
-                {errors.name && (
-                  <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-                )}
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  카테고리 *
-                </label>
-                <select
-                  {...register('category', { required: '카테고리를 선택하세요' })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                >
-                  <option value="">카테고리 선택</option>
-                  {CATEGORIES.slice(1).map(cat => (
-                    <option key={cat.value} value={cat.value}>{cat.label}</option>
-                  ))}
-                </select>
-                {errors.category && (
-                  <p className="mt-1 text-sm text-red-600">{errors.category.message}</p>
-                )}
-              </div>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                주소 *
-              </label>
-              <input
-                {...register('location.address', { required: '주소를 입력하세요' })}
-                type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              />
-              {errors.location?.address && (
-                <p className="mt-1 text-sm text-red-600">{errors.location.address.message}</p>
-              )}
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  좌표 (경도,위도)
-                </label>
-                <input
-                  {...register('coordinates')}
-                  type="text"
-                  placeholder="127.123456, 37.123456"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  지역/상권
-                </label>
-                <input
-                  {...register('location.area')}
-                  type="text"
-                  placeholder="홍대, 강남 등"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                설명
-              </label>
-              <textarea
-                {...register('description')}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                연락처
-              </label>
-              <input
-                {...register('contact.phone')}
-                type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-            
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-              >
-                취소
-              </button>
-              <button
-                type="submit"
-                disabled={createMutation.isLoading}
-                className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50"
-              >
-                {createMutation.isLoading ? '등록 중...' : '등록'}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function Stores() {
   const [filters, setFilters] = useState({
     page: 1,
@@ -201,7 +40,8 @@ export default function Stores() {
     status: ''
   })
   
-  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showModal, setShowModal] = useState(false)
+  const [selectedStore, setSelectedStore] = useState(null)
   const queryClient = useQueryClient()
 
   const { data, isLoading, error } = useQuery(
@@ -210,6 +50,28 @@ export default function Stores() {
     {
       select: (response) => response.data,
       keepPreviousData: true
+    }
+  )
+
+  const createMutation = useMutation(
+    (data) => storeAPI.createStore(data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['stores'])
+        setShowModal(false)
+        setSelectedStore(null)
+      }
+    }
+  )
+
+  const updateMutation = useMutation(
+    ({ id, data }) => storeAPI.updateStore(id, data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['stores'])
+        setShowModal(false)
+        setSelectedStore(null)
+      }
     }
   )
 
@@ -239,6 +101,24 @@ export default function Stores() {
     }))
   }
 
+  const handleCreateStore = () => {
+    setSelectedStore(null)
+    setShowModal(true)
+  }
+
+  const handleEditStore = (store) => {
+    setSelectedStore(store)
+    setShowModal(true)
+  }
+
+  const handleSubmitStore = (data) => {
+    if (selectedStore) {
+      updateMutation.mutate({ id: selectedStore._id, data })
+    } else {
+      createMutation.mutate(data)
+    }
+  }
+
   const handleToggleStatus = (store) => {
     if (confirm(`${store.name} 매장을 ${store.isActive ? '비활성화' : '활성화'}하시겠습니까?`)) {
       toggleStatusMutation.mutate({
@@ -252,10 +132,6 @@ export default function Stores() {
     if (confirm(`${store.name} 매장을 완전히 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) {
       deleteStoreMutation.mutate(store._id)
     }
-  }
-
-  const handleCreateSuccess = () => {
-    queryClient.invalidateQueries(['stores'])
   }
 
   if (isLoading) {
@@ -285,7 +161,7 @@ export default function Stores() {
         </div>
         
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={handleCreateStore}
           className="flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
         >
           <Plus className="h-4 w-4" />
@@ -415,6 +291,13 @@ export default function Stores() {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end space-x-2">
                       <button
+                        onClick={() => handleEditStore(store)}
+                        className="text-blue-600 hover:text-blue-900"
+                        title="수정"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
                         onClick={() => handleToggleStatus(store)}
                         className="text-blue-600 hover:text-blue-900"
                         title={store.isActive ? '비활성화' : '활성화'}
@@ -489,10 +372,15 @@ export default function Stores() {
         )}
       </div>
 
-      <CreateStoreModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSuccess={handleCreateSuccess}
+      <StoreFormModal
+        isOpen={showModal}
+        onClose={() => {
+          setShowModal(false)
+          setSelectedStore(null)
+        }}
+        onSubmit={handleSubmitStore}
+        store={selectedStore}
+        loading={createMutation.isLoading || updateMutation.isLoading}
       />
     </div>
   )
