@@ -6,39 +6,11 @@ import {
   TrendingUp, 
   Users,
   Activity,
-  Calendar
+  Calendar,
+  ArrowUpRight,
+  ArrowDownRight
 } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
-
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
-
-function StatCard({ title, value, change, icon: Icon, color = 'blue' }) {
-  const colorClasses = {
-    blue: 'bg-blue-500',
-    green: 'bg-green-500',
-    yellow: 'bg-yellow-500',
-    red: 'bg-red-500'
-  }
-
-  return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center">
-        <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
-          <Icon className="h-6 w-6 text-white" />
-        </div>
-        <div className="ml-4">
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-semibold text-gray-900">{value}</p>
-          {change !== undefined && (
-            <p className={`text-sm ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {change >= 0 ? '+' : ''}{change}%
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
+import { ChartCard, MetricCard, PieChartComponent, AreaChartComponent } from '../components/Chart'
 
 export default function Dashboard() {
   const { data: stats, isLoading, error } = useQuery(
@@ -68,6 +40,39 @@ export default function Dashboard() {
 
   const { overview, storesByCategory, recentActivity } = stats
 
+  // 차트 데이터 변환
+  const categoryData = storesByCategory.map(item => ({
+    name: item._id,
+    value: item.count
+  }))
+
+  // 샘플 트렌드 데이터 (실제로는 API에서 받아와야 함)
+  const trendData = [
+    { name: '월', scans: 2400, clicks: 240 },
+    { name: '화', scans: 1398, clicks: 139 },
+    { name: '수', scans: 9800, clicks: 980 },
+    { name: '목', scans: 3908, clicks: 390 },
+    { name: '금', scans: 4800, clicks: 480 },
+    { name: '토', scans: 3800, clicks: 380 },
+    { name: '일', scans: 4300, clicks: 430 }
+  ]
+
+  const formatNumber = (num) => {
+    return new Intl.NumberFormat('ko-KR').format(num)
+  }
+
+  const getChangeType = (change) => {
+    if (change > 0) return 'positive'
+    if (change < 0) return 'negative'
+    return 'neutral'
+  }
+
+  const getChangeIcon = (change) => {
+    if (change > 0) return ArrowUpRight
+    if (change < 0) return ArrowDownRight
+    return null
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -77,112 +82,164 @@ export default function Dashboard() {
 
       {/* 주요 지표 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
+        <MetricCard
           title="총 매장 수"
-          value={overview.totalStores}
+          value={formatNumber(overview.totalStores)}
           icon={Store}
-          color="blue"
         />
-        <StatCard
+        <MetricCard
           title="오늘 QR 스캔"
-          value={overview.todayScans}
-          change={parseFloat(overview.scanGrowth)}
+          value={formatNumber(overview.todayScans)}
+          change={`${overview.scanGrowth}%`}
+          changeType={getChangeType(parseFloat(overview.scanGrowth))}
           icon={QrCode}
-          color="green"
         />
-        <StatCard
+        <MetricCard
           title="주간 스캔"
-          value={overview.weeklyScans}
+          value={formatNumber(overview.weeklyScans)}
           icon={TrendingUp}
-          color="yellow"
         />
-        <StatCard
+        <MetricCard
           title="클릭률"
           value={`${overview.clickThroughRate}%`}
           icon={Activity}
-          color="red"
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 카테고리별 매장 분포 */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">카테고리별 매장 분포</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={storesByCategory}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ _id, count, percent }) => `${_id} (${(percent * 100).toFixed(0)}%)`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="count"
-              >
-                {storesByCategory.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+        <ChartCard
+          title="카테고리별 매장 분포"
+          subtitle="등록된 매장의 카테고리별 분포"
+        >
+          <PieChartComponent
+            data={categoryData}
+            dataKey="value"
+            nameKey="name"
+            height={300}
+            formatter={(value) => `${value}개`}
+          />
+        </ChartCard>
 
+        {/* 주간 트렌드 */}
+        <ChartCard
+          title="주간 활동 트렌드"
+          subtitle="최근 7일간 QR 스캔 및 클릭 현황"
+        >
+          <AreaChartComponent
+            data={trendData}
+            xKey="name"
+            areas={[
+              { key: 'scans', name: 'QR 스캔', color: '#3B82F6' },
+              { key: 'clicks', name: '추천 클릭', color: '#10B981' }
+            ]}
+            height={300}
+            formatter={(value) => formatNumber(value)}
+          />
+        </ChartCard>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 최근 활동 */}
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">최근 활동</h3>
-          <div className="space-y-3">
-            {recentActivity.map((activity) => (
-              <div key={activity.id} className="flex items-center space-x-3">
-                <div className="flex-shrink-0">
-                  <Activity className="h-5 w-5 text-gray-400" />
+          <div className="space-y-4">
+            {recentActivity.length > 0 ? (
+              recentActivity.map((activity) => (
+                <div key={activity.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex-shrink-0 mt-1">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-900">
+                      <span className="font-medium">{activity.store}</span>
+                      {activity.type === 'qr_scan' && (
+                        <span className="text-blue-600"> QR 코드 스캔</span>
+                      )}
+                      {activity.type === 'recommendation_click' && (
+                        <span className="text-green-600"> → {activity.targetStore} 추천 클릭</span>
+                      )}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {new Date(activity.timestamp).toLocaleString('ko-KR')}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-900">
-                    <span className="font-medium">{activity.store}</span>
-                    {activity.type === 'qr_scan' && ' QR 스캔'}
-                    {activity.type === 'recommendation_click' && ` → ${activity.targetStore} 추천 클릭`}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {new Date(activity.timestamp).toLocaleString('ko-KR')}
-                  </p>
-                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                최근 활동이 없습니다.
               </div>
-            ))}
+            )}
+          </div>
+        </div>
+
+        {/* 추가 통계 */}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-4">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">월간 스캔</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-2">
+                    {formatNumber(overview.monthlyScans)}
+                  </p>
+                </div>
+                <Calendar className="h-8 w-8 text-blue-500" />
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">비활성 매장</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-2">
+                    {formatNumber(overview.totalInactiveStores)}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    전체 매장의 {((overview.totalInactiveStores / overview.totalStores) * 100).toFixed(1)}%
+                  </p>
+                </div>
+                <Store className="h-8 w-8 text-red-500" />
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">활성 매장</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-2">
+                    {formatNumber(overview.totalStores - overview.totalInactiveStores)}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    전체 매장의 {(((overview.totalStores - overview.totalInactiveStores) / overview.totalStores) * 100).toFixed(1)}%
+                  </p>
+                </div>
+                <Users className="h-8 w-8 text-green-500" />
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 추가 통계 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <Calendar className="h-8 w-8 text-blue-500" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">월간 스캔</p>
-              <p className="text-2xl font-semibold text-gray-900">{overview.monthlyScans}</p>
-            </div>
+      {/* 성과 요약 */}
+      <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow p-6 text-white">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="text-center">
+            <p className="text-blue-100 text-sm">총 매장</p>
+            <p className="text-2xl font-bold">{formatNumber(overview.totalStores)}</p>
           </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <Store className="h-8 w-8 text-red-500" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">비활성 매장</p>
-              <p className="text-2xl font-semibold text-gray-900">{overview.totalInactiveStores}</p>
-            </div>
+          <div className="text-center">
+            <p className="text-blue-100 text-sm">오늘 스캔</p>
+            <p className="text-2xl font-bold">{formatNumber(overview.todayScans)}</p>
           </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <Users className="h-8 w-8 text-green-500" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">활성 매장</p>
-              <p className="text-2xl font-semibold text-gray-900">{overview.totalStores}</p>
-            </div>
+          <div className="text-center">
+            <p className="text-blue-100 text-sm">월간 스캔</p>
+            <p className="text-2xl font-bold">{formatNumber(overview.monthlyScans)}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-blue-100 text-sm">평균 클릭률</p>
+            <p className="text-2xl font-bold">{overview.clickThroughRate}%</p>
           </div>
         </div>
       </div>
