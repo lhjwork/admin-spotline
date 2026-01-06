@@ -7,6 +7,7 @@ import Stores from "./pages/Stores";
 import Recommendations from "./pages/Recommendations";
 import Analytics from "./pages/Analytics";
 import Admins from "./pages/Admins";
+import ExtensionDetector from "./components/ExtensionDetector";
 import { ReactNode } from "react";
 
 interface ProtectedRouteProps {
@@ -21,6 +22,7 @@ function ProtectedRoute({ children }: ProtectedRouteProps) {
 function App() {
   return (
     <AuthProvider>
+      <ExtensionDetector />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route
