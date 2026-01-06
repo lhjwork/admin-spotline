@@ -1,12 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { authAPI } from "../services/api";
-
-interface Admin {
-  id: string;
-  username: string;
-  email?: string;
-  role?: string;
-}
+import type { Admin } from "../types";
 
 interface AuthContextType {
   admin: Admin | null;
@@ -36,38 +30,52 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("admin_token");
-    const adminData = localStorage.getItem("admin_data");
+    const initAuth = async () => {
+      const token = localStorage.getItem("admin_token");
+      const adminData = localStorage.getItem("admin_data");
 
-    if (token && adminData) {
-      try {
-        setAdmin(JSON.parse(adminData));
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error("Failed to parse admin data:", error);
-        localStorage.removeItem("admin_token");
-        localStorage.removeItem("admin_data");
+      if (token && adminData) {
+        try {
+          // 토큰 검증
+          await authAPI.verifyToken();
+          setAdmin(JSON.parse(adminData));
+          setIsAuthenticated(true);
+        } catch (error) {
+          console.error("Token verification failed:", error);
+          localStorage.removeItem("admin_token");
+          localStorage.removeItem("admin_data");
+        }
       }
-    }
-    setLoading(false);
+      setLoading(false);
+    };
+
+    initAuth();
   }, []);
 
   const login = async (username: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       const response = await authAPI.login(username, password);
-      const { token, admin } = response.data;
 
-      localStorage.setItem("admin_token", token);
-      localStorage.setItem("admin_data", JSON.stringify(admin));
+      if (response.data.success) {
+        const { admin, token } = response.data.data;
 
-      setAdmin(admin);
-      setIsAuthenticated(true);
+        localStorage.setItem("admin_token", token);
+        localStorage.setItem("admin_data", JSON.stringify(admin));
 
-      return { success: true };
+        setAdmin(admin);
+        setIsAuthenticated(true);
+
+        return { success: true };
+      } else {
+        return {
+          success: false,
+          error: response.data.message || "로그인에 실패했습니다",
+        };
+      }
     } catch (error: any) {
       return {
         success: false,
-        error: error.response?.data?.error || "로그인에 실패했습니다",
+        error: error.response?.data?.message || "로그인에 실패했습니다",
       };
     }
   };

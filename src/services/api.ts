@@ -1,18 +1,7 @@
 import axios, { AxiosResponse } from "axios";
-import type { Store, Recommendation, Admin, DashboardStats, ApiResponse } from "../types";
+import type { Store, Recommendation, Admin, DashboardStats, ApiResponse, LoginResponse, QRAnalytics, StoreAnalytics, RecommendationPerformance, TrafficStats } from "../types";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-
-// 타입 정의
-export interface LoginResponse {
-  token: string;
-  admin: {
-    id: string;
-    username: string;
-    email?: string;
-    role?: string;
-  };
-}
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 // Axios 인스턴스 생성
 const api = axios.create({
@@ -51,45 +40,124 @@ api.interceptors.response.use(
 
 // 인증 API
 export const authAPI = {
-  login: (username: string, password: string): Promise<AxiosResponse<LoginResponse>> => axios.post(`${API_BASE_URL}/api/admin/login`, { username, password }),
+  // 관리자 로그인
+  login: (username: string, password: string): Promise<AxiosResponse<ApiResponse<LoginResponse>>> => api.post("/api/admin/login", { username, password }),
+
+  // 관리자 프로필 조회
+  getProfile: (): Promise<AxiosResponse<ApiResponse<Admin>>> => api.get("/api/admin/profile"),
+
+  // 토큰 검증
+  verifyToken: (): Promise<AxiosResponse<ApiResponse<{ valid: boolean }>>> => api.get("/api/admin/verify"),
+
+  // 관리자 계정 생성
+  createAdmin: (data: Partial<Admin> & { password: string }): Promise<AxiosResponse<ApiResponse<Admin>>> => api.post("/api/admin/create", data),
 };
 
 // 대시보드 API
 export const dashboardAPI = {
-  getStats: (): Promise<AxiosResponse<DashboardStats>> => api.get("/api/admin/dashboard/stats"),
+  getStats: (): Promise<AxiosResponse<ApiResponse<DashboardStats>>> => api.get("/api/admin/dashboard/stats"),
 };
 
 // 매장 관리 API
 export const storeAPI = {
-  getStores: (params?: Record<string, any>): Promise<AxiosResponse<ApiResponse<Store[]>>> => api.get("/api/admin/stores", { params }),
-  getStore: (id: string): Promise<AxiosResponse<Store>> => api.get(`/api/admin/stores/${id}`),
-  createStore: (data: Partial<Store>): Promise<AxiosResponse<Store>> => api.post("/api/admin/stores", data),
-  updateStore: (id: string, data: Partial<Store>): Promise<AxiosResponse<Store>> => api.put(`/api/admin/stores/${id}`, data),
-  toggleStatus: (id: string, isActive: boolean): Promise<AxiosResponse<Store>> => api.patch(`/api/admin/stores/${id}/status`, { isActive }),
-  deleteStore: (id: string): Promise<AxiosResponse<void>> => api.delete(`/api/admin/stores/${id}`),
+  // 모든 매장 조회
+  getStores: (params?: { category?: string; area?: string; limit?: number }): Promise<AxiosResponse<ApiResponse<Store[]>>> => api.get("/api/stores", { params }),
+
+  // 특정 매장 조회
+  getStore: (id: string): Promise<AxiosResponse<ApiResponse<Store>>> => api.get(`/api/stores/${id}`),
+
+  // 매장 등록
+  createStore: (data: Omit<Store, "_id" | "createdAt" | "updatedAt">): Promise<AxiosResponse<ApiResponse<Store>>> => api.post("/api/stores", data),
+
+  // 매장 정보 수정
+  updateStore: (id: string, data: Partial<Store>): Promise<AxiosResponse<ApiResponse<Store>>> => api.put(`/api/stores/${id}`, data),
+
+  // 매장 삭제 (비활성화)
+  deleteStore: (id: string): Promise<AxiosResponse<ApiResponse<void>>> => api.delete(`/api/stores/${id}`),
+
+  // QR 코드로 매장 조회
+  getStoreByQR: (qrId: string): Promise<AxiosResponse<ApiResponse<Store>>> => api.get(`/api/stores/qr/${qrId}`),
+
+  // 근처 매장 검색
+  getNearbyStores: (lat: number, lng: number, radius?: number): Promise<AxiosResponse<ApiResponse<Store[]>>> => api.get(`/api/stores/nearby/${lat}/${lng}`, { params: { radius } }),
 };
 
 // 추천 관리 API
 export const recommendationAPI = {
-  getRecommendations: (params?: Record<string, any>): Promise<AxiosResponse<ApiResponse<Recommendation[]>>> => api.get("/api/admin/recommendations", { params }),
-  createRecommendation: (data: Partial<Recommendation>): Promise<AxiosResponse<Recommendation>> => api.post("/api/admin/recommendations", data),
-  updateRecommendation: (id: string, data: Partial<Recommendation>): Promise<AxiosResponse<Recommendation>> => api.put(`/api/admin/recommendations/${id}`, data),
-  deleteRecommendation: (id: string): Promise<AxiosResponse<void>> => api.delete(`/api/admin/recommendations/${id}`),
+  // 추천 관계 생성
+  createRecommendation: (data: Omit<Recommendation, "_id" | "createdAt" | "updatedAt">): Promise<AxiosResponse<ApiResponse<Recommendation>>> => api.post("/api/recommendations", data),
+
+  // 추천 관계 수정
+  updateRecommendation: (id: string, data: Partial<Recommendation>): Promise<AxiosResponse<ApiResponse<Recommendation>>> => api.put(`/api/recommendations/${id}`, data),
+
+  // 추천 관계 삭제
+  deleteRecommendation: (id: string): Promise<AxiosResponse<ApiResponse<void>>> => api.delete(`/api/recommendations/${id}`),
+
+  // QR 코드별 추천 조회
+  getRecommendationsByQR: (qrId: string): Promise<AxiosResponse<ApiResponse<Recommendation[]>>> => api.get(`/api/recommendations/qr/${qrId}`),
+
+  // 매장별 추천 조회
+  getRecommendationsByStore: (storeId: string): Promise<AxiosResponse<ApiResponse<Recommendation[]>>> => api.get(`/api/recommendations/store/${storeId}`),
+
+  // 카테고리별 추천 통계
+  getCategoryStats: (): Promise<AxiosResponse<ApiResponse<Record<string, number>>>> => api.get("/api/recommendations/stats/categories"),
+
+  // 모든 추천 조회 (관리자용)
+  getRecommendations: (params?: { category?: string; limit?: number }): Promise<AxiosResponse<ApiResponse<Recommendation[]>>> => api.get("/api/recommendations", { params }),
 };
 
 // 분석 API
 export const analyticsAPI = {
-  getData: (params?: Record<string, any>): Promise<AxiosResponse<any>> => api.get("/api/admin/analytics", { params }),
-  getPopularStores: (params?: Record<string, any>): Promise<AxiosResponse<any>> => api.get("/api/admin/analytics/popular-stores", { params }),
-  getQRPerformance: (params?: Record<string, any>): Promise<AxiosResponse<any>> => api.get("/api/admin/analytics/qr-performance", { params }),
-  getRecommendationPerformance: (params?: Record<string, any>): Promise<AxiosResponse<any>> => api.get("/api/admin/analytics/recommendation-performance", { params }),
+  // QR 코드별 통계
+  getQRAnalytics: (
+    qrId: string,
+    params?: {
+      startDate?: string;
+      endDate?: string;
+    }
+  ): Promise<AxiosResponse<ApiResponse<QRAnalytics>>> => api.get(`/api/analytics/qr/${qrId}`, { params }),
+
+  // 매장별 통계
+  getStoreAnalytics: (
+    storeId: string,
+    params?: {
+      period?: "day" | "week" | "month";
+    }
+  ): Promise<AxiosResponse<ApiResponse<StoreAnalytics>>> => api.get(`/api/analytics/store/${storeId}`, { params }),
+
+  // 추천 성과 분석
+  getRecommendationPerformance: (params?: { category?: string; limit?: number }): Promise<AxiosResponse<ApiResponse<RecommendationPerformance[]>>> =>
+    api.get("/api/analytics/recommendations/performance", { params }),
+
+  // 일별 트래픽 통계
+  getDailyTraffic: (params?: { days?: number }): Promise<AxiosResponse<ApiResponse<TrafficStats[]>>> => api.get("/api/analytics/traffic/daily", { params }),
+
+  // 이벤트 로깅
+  logEvent: (data: { qrCode: string; eventType: string; targetStore?: string; metadata?: Record<string, any> }): Promise<AxiosResponse<ApiResponse<void>>> => api.post("/api/analytics/event", data),
 };
 
-// 어드민 관리 API
+// 지오코딩 API
+export const geocodingAPI = {
+  // 통합 지오코딩
+  unified: (address: string): Promise<AxiosResponse<ApiResponse<any>>> => api.get("/api/geocoding/unified", { params: { address } }),
+
+  // 네이버 지오코딩
+  naver: (address: string): Promise<AxiosResponse<ApiResponse<any>>> => api.get("/api/geocoding/naver", { params: { address } }),
+
+  // 구글 지오코딩
+  google: (address: string): Promise<AxiosResponse<ApiResponse<any>>> => api.get("/api/geocoding/google", { params: { address } }),
+
+  // 좌표 유효성 검증
+  validate: (coordinates: { lat: number; lng: number }): Promise<AxiosResponse<ApiResponse<any>>> => api.post("/api/geocoding/validate", coordinates),
+};
+
+// 어드민 관리 API (기존 호환성 유지)
 export const adminAPI = {
-  getAdmins: (): Promise<AxiosResponse<Admin[]>> => api.get("/api/admin/admins"),
-  createAdmin: (data: Partial<Admin>): Promise<AxiosResponse<Admin>> => api.post("/api/admin/admins", data),
-  updatePermissions: (id: string, permissions: string[]): Promise<AxiosResponse<Admin>> => api.patch(`/api/admin/admins/${id}/permissions`, { permissions }),
+  getAdmins: (): Promise<AxiosResponse<ApiResponse<Admin[]>>> => api.get("/api/admin/list"),
+
+  createAdmin: (data: Partial<Admin> & { password: string }): Promise<AxiosResponse<ApiResponse<Admin>>> => authAPI.createAdmin(data),
+
+  updatePermissions: (id: string, permissions: string[]): Promise<AxiosResponse<ApiResponse<Admin>>> => api.patch(`/api/admin/${id}/permissions`, { permissions }),
 };
 
 // 데이터 내보내기 API

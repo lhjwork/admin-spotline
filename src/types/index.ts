@@ -1,59 +1,69 @@
 // 공통 타입 정의
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
 export interface Store {
-  id: string;
-  _id?: string;
+  _id: string;
   name: string;
-  address: string;
-  phone?: string;
   category: string;
-  isActive: boolean;
-  latitude?: number;
-  longitude?: number;
-  createdAt: string;
-  updatedAt: string;
-  location?: {
+  location: {
     address: string;
-    coordinates?: {
-      coordinates: [number, number];
+    coordinates: {
+      type: "Point";
+      coordinates: [number, number]; // [lng, lat]
     };
+    district?: string;
+    area?: string;
   };
   contact?: {
     phone?: string;
     website?: string;
     instagram?: string;
   };
-  tags?: string[];
   businessHours?: Record<string, { open: string; close: string }>;
+  description?: string;
+  tags?: string[];
+  images?: string[];
+  qrCode: {
+    id: string;
+    isActive: boolean;
+  };
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Recommendation {
-  id: string;
-  _id?: string;
-  storeId: string;
-  fromStore?: string;
-  toStore?: string;
-  title: string;
+  _id: string;
+  fromStore: string;
+  toStore: string;
+  category: string;
+  priority: number;
   description?: string;
-  category?: string;
+  tags?: string[];
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface Admin {
-  id: string;
-  _id?: string;
+  _id: string;
   username: string;
-  email?: string;
-  role: string;
-  permissions:
-    | string[]
-    | {
-        stores?: { read?: boolean; write?: boolean };
-        analytics?: { read?: boolean };
-      };
-  createdAt: string;
+  email: string;
+  role: "admin" | "super_admin";
+  isActive: boolean;
   lastLogin?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LoginResponse {
+  admin: Admin;
+  token: string;
+  expiresIn: string;
 }
 
 export interface DashboardStats {
@@ -61,14 +71,75 @@ export interface DashboardStats {
   activeStores: number;
   totalRecommendations: number;
   totalQRScans: number;
-  overview?: {
-    totalStores: number;
-    activeStores: number;
-    totalRecommendations: number;
-    totalQRScans: number;
+  todayScans?: number;
+  uniqueVisitors?: number;
+  conversionRate?: number;
+}
+
+export interface Analytics {
+  _id: string;
+  qrCode: string;
+  store: string;
+  eventType: "qr_scan" | "page_view" | "recommendation_click" | "map_click" | "store_visit";
+  targetStore?: string;
+  sessionId?: string;
+  userAgent?: string;
+  ipAddress?: string;
+  referrer?: string;
+  timestamp: string;
+  metadata?: {
+    category?: string;
+    position?: number;
+    duration?: number;
   };
-  storesByCategory?: Array<{ name: string; value: number }>;
-  recentActivity?: Array<{ id: string; type: string; message: string; timestamp: string }>;
+}
+
+export interface QRAnalytics {
+  qrCode: string;
+  totalScans: number;
+  uniqueVisitors: number;
+  eventBreakdown: Record<string, number>;
+  dailyStats: Array<{
+    date: string;
+    scans: number;
+    visitors: number;
+  }>;
+}
+
+export interface StoreAnalytics {
+  storeId: string;
+  totalVisits: number;
+  recommendationClicks: number;
+  conversionRate: number;
+  popularRecommendations: Array<{
+    category: string;
+    clicks: number;
+  }>;
+}
+
+export interface RecommendationPerformance {
+  recommendationId: string;
+  fromStore: {
+    name: string;
+    category: string;
+  };
+  toStore: {
+    name: string;
+    category: string;
+  };
+  clicks: number;
+  impressions: number;
+  clickRate: number;
+  category: string;
+}
+
+export interface TrafficStats {
+  date: string;
+  totalEvents: number;
+  uniqueUsers: number;
+  qrScans: number;
+  pageViews: number;
+  recommendationClicks: number;
 }
 
 export interface Pagination {
@@ -76,11 +147,4 @@ export interface Pagination {
   total: number;
   limit: number;
   count: number;
-}
-
-export interface ApiResponse<T> {
-  data: T;
-  pagination?: Pagination;
-  stores?: T;
-  recommendations?: T;
 }
