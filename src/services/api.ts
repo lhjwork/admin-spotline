@@ -41,7 +41,17 @@ api.interceptors.response.use(
 // 인증 API
 export const authAPI = {
   // 관리자 로그인
-  login: (username: string, password: string): Promise<AxiosResponse<ApiResponse<LoginResponse>>> => api.post("/api/admin/login", { username, password }),
+  login: (username: string, password: string): Promise<AxiosResponse<ApiResponse<LoginResponse>>> => {
+    const API_URL = import.meta.env.VITE_API_URL || ""
+    const loginUrl = API_URL ? `${API_URL}/api/admin/login` : "/api/admin/login"
+    
+    return axios.post(loginUrl, { username, password }, {
+      withCredentials: true,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+  },
 
   // 관리자 프로필 조회
   getProfile: (): Promise<AxiosResponse<ApiResponse<Admin>>> => api.get("/api/admin/profile"),

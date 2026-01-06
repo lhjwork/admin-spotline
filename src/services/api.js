@@ -39,13 +39,17 @@ api.interceptors.response.use(
 
 // 인증 API
 export const authAPI = {
-  login: (username, password) => 
-    axios.post('/api/admin/login', { username, password }, {
+  login: (username, password) => {
+    const API_URL = import.meta.env.VITE_API_URL || ''
+    const loginUrl = API_URL ? `${API_URL}/api/admin/login` : '/api/admin/login'
+    
+    return axios.post(loginUrl, { username, password }, {
       withCredentials: true,
       headers: {
         'Content-Type': 'application/json'
       }
-    }),
+    })
+  },
 }
 
 // 대시보드 API
