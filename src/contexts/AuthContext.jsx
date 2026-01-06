@@ -30,19 +30,23 @@ export function AuthProvider({ children }) {
   const login = async (username, password) => {
     try {
       const response = await authAPI.login(username, password)
-      const { token, admin } = response.data
+      
+      // 가이드 형식에 맞춰 응답 구조 확인
+      const responseData = response.data
+      const token = responseData.success ? responseData.data.token : responseData.token
+      const adminData = responseData.success ? responseData.data.admin : responseData.admin
       
       localStorage.setItem('admin_token', token)
-      localStorage.setItem('admin_data', JSON.stringify(admin))
+      localStorage.setItem('admin_data', JSON.stringify(adminData))
       
-      setAdmin(admin)
+      setAdmin(adminData)
       setIsAuthenticated(true)
       
       return { success: true }
     } catch (error) {
       return { 
         success: false, 
-        error: error.response?.data?.error || '로그인에 실패했습니다' 
+        error: error.response?.data?.message || error.response?.data?.error || '로그인에 실패했습니다' 
       }
     }
   }

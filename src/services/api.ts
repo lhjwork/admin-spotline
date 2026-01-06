@@ -1,7 +1,7 @@
 import axios, { AxiosResponse } from "axios";
 import type { Store, Recommendation, Admin, DashboardStats, ApiResponse, LoginResponse, QRAnalytics, StoreAnalytics, RecommendationPerformance, TrafficStats } from "../types";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 // Axios 인스턴스 생성
 const api = axios.create({
