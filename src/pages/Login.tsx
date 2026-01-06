@@ -42,6 +42,7 @@ export default function Login() {
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Spotline Admin</h2>
           <p className="mt-2 text-center text-sm text-gray-600">관리자 계정으로 로그인하세요</p>
+          <p className="mt-1 text-center text-xs text-gray-500">시스템 시간: 한국 표준시 (KST) 기준</p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>

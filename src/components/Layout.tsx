@@ -1,7 +1,8 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { LayoutDashboard, Store, BarChart3, Users, LogOut, Menu, X, ArrowRight, LucideIcon } from "lucide-react";
-import { useState } from "react";
+import { LayoutDashboard, Store, BarChart3, Users, LogOut, Menu, X, ArrowRight, LucideIcon, Clock } from "lucide-react";
+import { useState, useEffect } from "react";
+import { getTimezoneInfo } from "../utils/dateUtils";
 
 interface NavigationItem {
   name: string;
