@@ -7,6 +7,8 @@ import Stores from "./pages/Stores";
 import Recommendations from "./pages/Recommendations";
 import Analytics from "./pages/Analytics";
 import Admins from "./pages/Admins";
+import ExperienceConfigs from "./pages/ExperienceConfigs";
+import DemoStores from "./pages/DemoStores";
 import ExtensionDetector from "./components/ExtensionDetector";
 import { ReactNode } from "react";
 
@@ -35,9 +37,17 @@ function App() {
         >
           <Route index element={<Navigate to="/dashboard" />} />
           <Route path="dashboard" element={<Dashboard />} />
+
+          {/* 실제 운영 */}
           <Route path="stores" element={<Stores />} />
           <Route path="recommendations" element={<Recommendations />} />
           <Route path="analytics" element={<Analytics />} />
+
+          {/* 데모 시스템 */}
+          <Route path="demo-stores" element={<DemoStores />} />
+          <Route path="experience-configs" element={<ExperienceConfigs />} />
+
+          {/* 시스템 */}
           <Route path="admins" element={<Admins />} />
         </Route>
       </Routes>

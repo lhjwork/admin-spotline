@@ -24,10 +24,15 @@ export default function Login() {
   }
 
   const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
+    console.log("🔥 LOGIN FORM SUBMITTED!");
+    console.log("Form data:", data);
+
     setLoading(true);
     setError("");
 
+    console.log("About to call login function...");
     const result = await login(data.username, data.password);
+    console.log("Login result:", result);
 
     if (!result.success) {
       setError(result.error || "로그인에 실패했습니다");

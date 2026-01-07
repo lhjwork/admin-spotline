@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import { storeAPI } from "../services/api";
-import { Search, Filter, MoreVertical, Eye, Edit, Trash2, ToggleLeft, ToggleRight, Plus } from "lucide-react";
+import { Search, Filter, MoreVertical, Eye, Edit, Trash2, ToggleLeft, ToggleRight, Plus, CheckCircle } from "lucide-react";
 import StoreFormModal from "../components/StoreFormModal";
 import { formatDateKST } from "../utils/dateUtils";
 
@@ -125,10 +125,18 @@ export default function Stores() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">매장 관리</h1>
-          <p className="text-gray-600">등록된 매장을 관리하고 모니터링하세요</p>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-2xl font-bold text-gray-900">실제 운영 매장 관리</h1>
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              <CheckCircle className="h-3 w-3 mr-1" />
+              실제 서비스
+            </span>
+          </div>
+          <div className="mt-2 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-sm text-green-800">✅ 실제 서비스에서 사용되는 매장들입니다. 사용자 분석 데이터가 수집되고 추천 시스템에 포함됩니다.</p>
+          </div>
         </div>
 
         <button onClick={handleCreateStore} className="flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700">

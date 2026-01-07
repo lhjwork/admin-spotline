@@ -3,6 +3,59 @@ export interface ApiResponse<T = any> {
   success: boolean;
   message: string;
   data: T;
+  status?: number;
+}
+
+// SpotLine 매장 타입 (VERSION002)
+export interface SpotlineStore {
+  id: string;
+  name: string;
+  shortDescription: string;
+  representativeImage: string;
+  location: {
+    address: string;
+    mapLink: string;
+  };
+  externalLinks: {
+    instagram?: string;
+    blog?: string;
+    notion?: string;
+    website?: string;
+  };
+  spotlineStory: string;
+}
+
+// 체험 결과 타입
+export interface ExperienceResult {
+  qrId: string;
+  storeName: string;
+  storeId: string;
+  area: string;
+  configUsed: {
+    id: string;
+    name: string;
+    type: string;
+  };
+  redirectUrl: string;
+}
+
+// 체험 설정 타입
+export interface ExperienceConfig {
+  _id: string;
+  name: string;
+  description: string;
+  type: "fixed" | "random" | "area_based" | "weighted";
+  isActive: boolean;
+  isDefault: boolean;
+  settings: {
+    qrId?: string; // fixed 타입용
+    areas?: string[]; // area_based 타입용
+    weights?: { qrId: string; weight: number }[]; // weighted 타입용
+  };
+  priority: number;
+  usageCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Store {
@@ -50,14 +103,14 @@ export interface Recommendation {
 }
 
 export interface Admin {
-  _id: string;
+  id: string; // VERSION002에서 id로 변경
   username: string;
   email: string;
   role: "admin" | "super_admin";
-  isActive: boolean;
+  isActive?: boolean;
   lastLogin?: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface LoginResponse {
@@ -66,7 +119,37 @@ export interface LoginResponse {
   expiresIn: string;
 }
 
+// 데모 매장 타입 (새로 추가)
+export interface DemoStore {
+  _id: string;
+  name: string;
+  category: string;
+  location: {
+    address: string;
+    area: string;
+  };
+  qrCode: {
+    id: string;
+    isActive: boolean;
+  };
+  shortDescription: string;
+  isActive: boolean;
+  isDemoOnly: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// 데모 통계 타입
+export interface DemoStats {
+  totalDemoStores: number;
+  activeDemoStores: number;
+  demoUsageCount: number;
+  lastUsed?: string;
+}
+
+// 확장된 대시보드 통계
 export interface DashboardStats {
+  // 실제 운영
   totalStores: number;
   activeStores: number;
   totalRecommendations: number;
@@ -74,13 +157,18 @@ export interface DashboardStats {
   todayScans?: number;
   uniqueVisitors?: number;
   conversionRate?: number;
+  experienceConfigs?: number;
+  activeExperienceConfigs?: number;
+
+  // 데모 시스템 (새로 추가)
+  demoStats?: DemoStats;
 }
 
 export interface Analytics {
   _id: string;
   qrCode: string;
   store: string;
-  eventType: "qr_scan" | "page_view" | "recommendation_click" | "map_click" | "store_visit";
+  eventType: "qr_scan" | "page_view" | "recommendation_click" | "map_click" | "store_visit" | "experience_click";
   targetStore?: string;
   sessionId?: string;
   userAgent?: string;
@@ -91,6 +179,7 @@ export interface Analytics {
     category?: string;
     position?: number;
     duration?: number;
+    configId?: string; // 체험 설정 ID
   };
 }
 
@@ -140,6 +229,7 @@ export interface TrafficStats {
   qrScans: number;
   pageViews: number;
   recommendationClicks: number;
+  experienceClicks: number; // 새로 추가
 }
 
 export interface Pagination {
