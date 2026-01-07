@@ -43,11 +43,26 @@ export const authAPI = {
     const API_URL = import.meta.env.VITE_API_URL || ''
     const loginUrl = API_URL ? `${API_URL}/api/admin/login` : '/api/admin/login'
     
+    console.log('Login attempt to:', loginUrl) // 디버깅용
+    
     return axios.post(loginUrl, { username, password }, {
       withCredentials: true,
       headers: {
         'Content-Type': 'application/json'
+      },
+      timeout: 10000 // 10초 타임아웃
+    }).catch(error => {
+      console.error('Login error:', error)
+      if (error.code === 'ERR_NETWORK') {
+        throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.')
       }
+      if (error.response?.status === 404) {
+        throw new Error('로그인 API를 찾을 수 없습니다. 서버 설정을 확인해주세요.')
+      }
+      if (error.message.includes('CORS')) {
+        throw new Error('CORS 에러가 발생했습니다. 서버 설정을 확인해주세요.')
+      }
+      throw error
     })
   },
 }

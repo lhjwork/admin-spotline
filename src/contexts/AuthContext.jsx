@@ -44,9 +44,20 @@ export function AuthProvider({ children }) {
       
       return { success: true }
     } catch (error) {
+      console.error('Login failed:', error)
+      let errorMessage = '로그인에 실패했습니다'
+      
+      if (error.message) {
+        errorMessage = error.message
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error
+      }
+      
       return { 
         success: false, 
-        error: error.response?.data?.message || error.response?.data?.error || '로그인에 실패했습니다' 
+        error: errorMessage
       }
     }
   }
