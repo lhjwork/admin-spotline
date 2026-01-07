@@ -10,8 +10,8 @@ import {
   ToggleLeft,
   ToggleRight,
   QrCode,
-  ExternalLink,
-  AlertTriangle
+  AlertTriangle,
+  Store
 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 
@@ -27,7 +27,7 @@ const CATEGORIES = [
 ]
 
 function StoreForm({ store, onSubmit, onCancel, loading }) {
-  const { register, handleSubmit, formState: { errors }, reset, watch } = useForm({
+  const { register, handleSubmit, formState: { errors }, reset } = useForm({
     defaultValues: store || {
       name: '',
       category: '',
@@ -354,7 +354,14 @@ export default function OperationalStores() {
     ['operational-stores', filters],
     () => operationalStoreAPI.getStores(filters),
     {
-      select: (response) => response.data,
+      select: (response) => {
+        // Handle backend response format
+        const responseData = response.data
+        if (responseData.success) {
+          return responseData.data
+        }
+        return responseData
+      },
       keepPreviousData: true,
       enabled: !isCreating && !isEditing
     }
@@ -365,7 +372,13 @@ export default function OperationalStores() {
     () => operationalStoreAPI.getStore(id),
     {
       enabled: isEditing,
-      select: (response) => response.data
+      select: (response) => {
+        const responseData = response.data
+        if (responseData.success) {
+          return responseData.data
+        }
+        return responseData
+      }
     }
   )
 

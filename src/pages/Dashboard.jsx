@@ -19,7 +19,14 @@ export default function Dashboard() {
     'dashboard-stats',
     () => dashboardAPI.getStats(),
     {
-      select: (response) => response.data,
+      select: (response) => {
+        // Handle backend response format
+        const responseData = response.data
+        if (responseData.success) {
+          return responseData.data
+        }
+        return responseData
+      },
       refetchInterval: 30000, // 30초마다 새로고침
     }
   )
