@@ -3,10 +3,11 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
-import Stores from './pages/Stores'
-import Recommendations from './pages/Recommendations'
+import OperationalStores from './pages/OperationalStores'
+import SpotlineStartSettings from './pages/SpotlineStartSettings'
+import DemoSystem from './pages/DemoSystem'
 import Analytics from './pages/Analytics'
-import Admins from './pages/Admins'
+import SystemSettings from './pages/SystemSettings'
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth()
@@ -25,10 +26,13 @@ function App() {
         }>
           <Route index element={<Navigate to="/dashboard" />} />
           <Route path="dashboard" element={<Dashboard />} />
-          <Route path="stores" element={<Stores />} />
-          <Route path="recommendations" element={<Recommendations />} />
+          <Route path="operational-stores" element={<OperationalStores />} />
+          <Route path="operational-stores/new" element={<OperationalStores />} />
+          <Route path="operational-stores/:id/edit" element={<OperationalStores />} />
+          <Route path="spotline-start" element={<SpotlineStartSettings />} />
+          <Route path="demo-system" element={<DemoSystem />} />
           <Route path="analytics" element={<Analytics />} />
-          <Route path="admins" element={<Admins />} />
+          <Route path="system-settings" element={<SystemSettings />} />
         </Route>
       </Routes>
     </AuthProvider>

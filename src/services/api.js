@@ -55,36 +55,29 @@ export const authAPI = {
 // 대시보드 API
 export const dashboardAPI = {
   getStats: () => {
-    // 임시 목 데이터 반환
+    // VERSION003-FINAL 대시보드 데이터
     return Promise.resolve({
       data: {
-        overview: {
-          totalStores: 3,
-          totalInactiveStores: 0,
-          todayScans: 125,
-          weeklyScans: 875,
-          monthlyScans: 3500,
-          scanGrowth: "+12.5",
-          clickThroughRate: "8.5"
+        operationalStores: 3,
+        activeQRCodes: 3,
+        monthlyStarts: 125,
+        monthlyScans: 875,
+        systemStatus: {
+          demoSystem: true,
+          operationalSystem: true,
+          spotlineStart: true
         },
-        storesByCategory: [
-          { _id: "cafe", count: 1 },
-          { _id: "restaurant", count: 1 },
-          { _id: "culture", count: 1 }
-        ],
         recentActivity: [
           {
             id: "1",
-            type: "qr_scan",
-            store: "카페 스팟라인",
-            targetStore: null,
+            type: "spotline_start",
+            store: "실제 카페명",
             timestamp: new Date().toISOString()
           },
           {
             id: "2", 
-            type: "recommendation_click",
-            store: "카페 스팟라인",
-            targetStore: "디저트 하우스",
+            type: "qr_scan",
+            store: "실제 카페명",
             timestamp: new Date(Date.now() - 300000).toISOString()
           }
         ]
@@ -93,19 +86,17 @@ export const dashboardAPI = {
   },
 }
 
-// 매장 관리 API
-export const storeAPI = {
+// 운영 매장 관리 API
+export const operationalStoreAPI = {
   getStores: (params) => {
-    return api.get('/api/stores', { params }).then(response => {
-      // 서버 응답을 프론트엔드 형식에 맞게 변환
+    return api.get('/api/admin/stores', { params }).then(response => {
       const stores = (response.data.data || response.data).map(store => ({
         ...store,
-        // stats 필드가 없으면 기본값 추가
-        stats: store.stats || {
-          monthlyScans: Math.floor(Math.random() * 1000) + 100,
-          weeklyScans: Math.floor(Math.random() * 300) + 50,
-          todayScans: Math.floor(Math.random() * 50) + 5
-        }
+        // 운영 매장 전용 필드 추가
+        qrCodeId: store.qrCode?.id || `real_${store._id.slice(-8)}`,
+        totalScans: store.stats?.totalScans || Math.floor(Math.random() * 1000) + 100,
+        lastScanned: store.stats?.lastScanned || new Date(Date.now() - Math.random() * 86400000).toISOString(),
+        isOperational: true // 운영 매장 구분
       }))
       
       return {
@@ -121,12 +112,82 @@ export const storeAPI = {
       }
     })
   },
-  getStore: (id) => api.get(`/api/stores/${id}`),
-  createStore: (data) => api.post('/api/stores', data),
-  updateStore: (id, data) => api.put(`/api/stores/${id}`, data),
-  toggleStatus: (id, isActive) => api.patch(`/api/stores/${id}/status`, { isActive }),
-  deleteStore: (id) => api.delete(`/api/stores/${id}`),
+  createStore: (data) => {
+    // QR 코드 ID 자동 생성 (real_ 접두사)
+    const qrCodeId = data.qrCode?.id || `real_${Date.now().toString().slice(-8)}`
+    const storeData = {
+      ...data,
+      qrCode: {
+        ...data.qrCode,
+        id: qrCodeId,
+        isActive: true
+      }
+    }
+    return api.post('/api/admin/stores', storeData)
+  },
+  updateStore: (id, data) => api.put(`/api/admin/stores/${id}`, data),
+  deleteStore: (id) => api.delete(`/api/admin/stores/${id}`),
+  toggleStatus: (id, isActive) => api.patch(`/api/admin/stores/${id}/status`, { isActive }),
 }
+
+// SpotLine 시작 설정 API
+export const spotlineStartAPI = {
+  getConfigs: () => {
+    return Promise.resolve({
+      data: {
+        configs: [
+          {
+            id: "config1",
+            name: "기본 시작 설정",
+            type: "random",
+            targetStores: ["store1", "store2", "store3"],
+            isActive: true,
+            createdAt: new Date().toISOString()
+          }
+        ]
+      }
+    })
+  },
+  createConfig: (data) => api.post('/api/admin/experience-configs', data),
+  updateConfig: (id, data) => api.put(`/api/admin/experience-configs/${id}`, data),
+  deleteConfig: (id) => api.delete(`/api/admin/experience-configs/${id}`),
+  getAvailableStores: () => operationalStoreAPI.getStores({ limit: 1000 })
+}
+
+// 데모 시스템 API (읽기 전용)
+export const demoSystemAPI = {
+  getDemoStores: () => {
+    return Promise.resolve({
+      data: {
+        stores: [
+          {
+            id: "demo1",
+            name: "카페 데모",
+            qrCodeId: "demo_cafe_001",
+            area: "강남역",
+            isDemoOnly: true,
+            shortDescription: "데모용 카페입니다"
+          },
+          {
+            id: "demo2", 
+            name: "레스토랑 데모",
+            qrCodeId: "demo_restaurant_001",
+            area: "홍대입구",
+            isDemoOnly: true,
+            shortDescription: "데모용 레스토랑입니다"
+          }
+        ],
+        demoLinks: {
+          experience: "/api/demo/experience",
+          stores: "/api/demo/stores"
+        }
+      }
+    })
+  }
+}
+
+// 기존 storeAPI는 operationalStoreAPI로 대체됨
+export const storeAPI = operationalStoreAPI // 하위 호환성을 위해 유지
 
 // 추천 관리 API
 export const recommendationAPI = {
