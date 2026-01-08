@@ -11,7 +11,6 @@ import type {
   ExperienceResult,
   ExperienceConfig,
   SpotlineStore,
-  DemoStore,
 } from "../types";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "";
@@ -201,14 +200,31 @@ export const recommendationAPI = {
     api.get(`/api/admin/stores/${storeId}/recommendations`)
 };
 
-// 🎪 데모 시스템 관리 API (신규)
+// 🎪 데모 시스템 관리 API (신규) - 기존 stores API 활용
 export const demoAPI = {
-  // 데모 매장 관리
-  getDemoStores: (): Promise<AxiosResponse<ApiResponse<{ stores: DemoStore[]; total: number; system: string }>>> => 
-    api.get("/api/admin/demo/stores"),
+  // 데모 매장 관리 - demo_ 접두사 필터링
+  getDemoStores: (): Promise<AxiosResponse<ApiResponse<{ stores: Store[]; total: number; system: string }>>> => 
+    storeAPI.getStores({ limit: 1000 }).then(response => {
+      const allStores = response.data.data?.stores || [];
+      const demoStores = allStores.filter(store => 
+        store.qrCode?.id?.startsWith('demo_')
+      );
+      
+      return {
+        ...response,
+        data: {
+          ...response.data,
+          data: {
+            stores: demoStores,
+            total: demoStores.length,
+            system: 'demo'
+          }
+        }
+      };
+    }),
   
-  getDemoStore: (storeId: string): Promise<AxiosResponse<ApiResponse<DemoStore>>> => 
-    api.get(`/api/admin/demo/stores/${storeId}`),
+  getDemoStore: (storeId: string): Promise<AxiosResponse<ApiResponse<Store>>> => 
+    storeAPI.getStore(storeId),
   
   createDemoStore: (data: {
     name: string;
@@ -219,18 +235,82 @@ export const demoAPI = {
       address: string;
       coordinates: [number, number];
     };
-  }): Promise<AxiosResponse<ApiResponse<DemoStore>>> => 
-    api.post("/api/admin/demo/stores", data),
+  }): Promise<AxiosResponse<ApiResponse<Store>>> => {
+    // QR 코드에 demo_ 접두사 자동 추가
+    const storeData = {
+      ...data,
+      location: {
+        address: data.location.address,
+        coordinates: {
+          type: "Point" as const,
+          coordinates: data.location.coordinates
+        },
+        area: "데모"
+      },
+      description: data.shortDescription,
+      qrCode: {
+        id: `demo_${Date.now().toString().slice(-8)}`,
+        isActive: true
+      },
+      isActive: true
+    };
+    return storeAPI.createStore(storeData as any);
+  },
   
-  updateDemoStore: (storeId: string, data: Partial<DemoStore>): Promise<AxiosResponse<ApiResponse<DemoStore>>> => 
-    api.put(`/api/admin/demo/stores/${storeId}`, data),
+  updateDemoStore: (storeId: string, data: Partial<Store>): Promise<AxiosResponse<ApiResponse<Store>>> => 
+    storeAPI.updateStore(storeId, data),
   
   deleteDemoStore: (storeId: string): Promise<AxiosResponse<ApiResponse<void>>> => 
-    api.delete(`/api/admin/demo/stores/${storeId}`),
+    storeAPI.deleteStore(storeId),
   
-  // 데모 추천 관리
+  // 데모 추천 관리 - 임시 목 데이터 (백엔드 API 구현 전까지)
   getDemoRecommendations: (): Promise<AxiosResponse<ApiResponse<{ recommendations: any[] }>>> => 
-    api.get("/api/admin/demo/recommendations"),
+    Promise.resolve({
+      data: {
+        success: true,
+        message: "데모 추천 목록을 성공적으로 가져왔습니다.",
+        data: {
+          recommendations: [
+            {
+              id: "demo-rec-1",
+              name: "달콤한 디저트 카페",
+              shortDescription: "커피 후 달콤한 디저트는 어떠세요?",
+              category: "dessert",
+              distance: 150,
+              walkingTime: 2,
+              representativeImage: "https://images.unsplash.com/photo-1551024506-0bccd828d307"
+            },
+            {
+              id: "demo-rec-2",
+              name: "조용한 독서 공간",
+              shortDescription: "책과 함께하는 여유로운 시간",
+              category: "culture",
+              distance: 200,
+              walkingTime: 3,
+              representativeImage: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570"
+            },
+            {
+              id: "demo-rec-3",
+              name: "아트 갤러리",
+              shortDescription: "예술 작품을 감상하며 영감을 얻어보세요",
+              category: "culture",
+              distance: 300,
+              walkingTime: 4,
+              representativeImage: "https://images.unsplash.com/photo-1541961017774-22349e4a1262"
+            },
+            {
+              id: "demo-rec-4",
+              name: "루프탑 카페",
+              shortDescription: "도시 전망을 즐기며 커피 한 잔",
+              category: "cafe",
+              distance: 250,
+              walkingTime: 3,
+              representativeImage: "https://images.unsplash.com/photo-1554118811-1e0d58224f24"
+            }
+          ]
+        }
+      }
+    } as any),
   
   createDemoRecommendation: (data: {
     name: string;
@@ -240,33 +320,67 @@ export const demoAPI = {
     walkingTime: number;
     representativeImage: string;
   }): Promise<AxiosResponse<ApiResponse<any>>> => 
-    api.post("/api/admin/demo/recommendations", data),
+    Promise.resolve({
+      data: {
+        success: true,
+        message: "데모 추천이 생성되었습니다.",
+        data: { id: `demo-rec-${Date.now()}`, ...data }
+      }
+    } as any),
   
-  updateDemoRecommendation: (id: string, data: any): Promise<AxiosResponse<ApiResponse<any>>> => 
-    api.put(`/api/admin/demo/recommendations/${id}`, data),
+  updateDemoRecommendation: (_recommendationId: string, data: any): Promise<AxiosResponse<ApiResponse<any>>> => 
+    Promise.resolve({
+      data: {
+        success: true,
+        message: "데모 추천이 수정되었습니다.",
+        data: { id: `demo-rec-${Date.now()}`, ...data }
+      }
+    } as any),
   
-  deleteDemoRecommendation: (id: string): Promise<AxiosResponse<ApiResponse<void>>> => 
-    api.delete(`/api/admin/demo/recommendations/${id}`),
+  deleteDemoRecommendation: (_recommendationId: string): Promise<AxiosResponse<ApiResponse<void>>> => 
+    Promise.resolve({
+      data: {
+        success: true,
+        message: "데모 추천이 삭제되었습니다."
+      }
+    } as any),
   
-  // 데모 설정 관리
+  // 데모 설정 관리 - 임시 목 데이터
   getDemoSettings: (): Promise<AxiosResponse<ApiResponse<{
     isEnabled: boolean;
     loadingSimulationMs: number;
     version: string;
     lastUpdated: string;
   }>>> => 
-    api.get("/api/admin/demo/settings"),
+    Promise.resolve({
+      data: {
+        success: true,
+        message: "데모 시스템 설정을 성공적으로 가져왔습니다.",
+        data: {
+          isEnabled: true,
+          loadingSimulationMs: 500,
+          version: "2.0",
+          lastUpdated: new Date().toISOString()
+        }
+      }
+    } as any),
   
   updateDemoSettings: (settings: {
     isEnabled?: boolean;
     loadingSimulationMs?: number;
   }): Promise<AxiosResponse<ApiResponse<any>>> => 
-    api.put("/api/admin/demo/settings", settings)
+    Promise.resolve({
+      data: {
+        success: true,
+        message: "데모 시스템 설정이 업데이트되었습니다.",
+        data: settings
+      }
+    } as any)
 };
 
-// 🚀 라이브 시스템 관리 API (신규)
+// 🚀 라이브 시스템 관리 API (신규) - 임시 구현 (백엔드 API 구현 전까지)
 export const liveAPI = {
-  // 라이브 매장 관리
+  // 라이브 매장 관리 - 임시 빈 데이터
   getLiveStores: (params: {
     page?: number;
     limit?: number;
@@ -282,29 +396,64 @@ export const liveAPI = {
       pending: number;
       suspended: number;
     };
-  }>>> => {
-    const queryParams = {
-      page: params.page || 1,
-      limit: params.limit || 20,
-      ...(params.status && { status: params.status }),
-      ...(params.category && { category: params.category }),
-      ...(params.search && { search: params.search })
-    };
-    return api.get("/api/admin/live/stores", { params: queryParams });
-  },
+  }>>> => 
+    Promise.resolve({
+      data: {
+        success: true,
+        message: "라이브 매장 목록을 성공적으로 가져왔습니다.",
+        data: {
+          stores: [], // 빈 배열 - 아직 라이브 매장 없음
+          pagination: {
+            page: params.page || 1,
+            limit: params.limit || 20,
+            total: 0,
+            pages: 1
+          },
+          summary: {
+            total: 0,
+            active: 0,
+            pending: 0,
+            suspended: 0
+          }
+        }
+      }
+    } as any),
   
   getLiveStore: (storeId: string): Promise<AxiosResponse<ApiResponse<any>>> => 
-    api.get(`/api/admin/live/stores/${storeId}`),
+    Promise.resolve({
+      data: {
+        success: false,
+        message: `라이브 매장을 찾을 수 없습니다. (ID: ${storeId})`
+      }
+    } as any),
   
   approveStore: (storeId: string, approvalNote: string = ''): Promise<AxiosResponse<ApiResponse<any>>> => 
-    api.post(`/api/admin/live/stores/${storeId}/approve`, { approvalNote }),
+    Promise.resolve({
+      data: {
+        success: true,
+        message: "매장이 승인되었습니다.",
+        data: { storeId, approvalNote }
+      }
+    } as any),
   
   suspendStore: (storeId: string, suspensionReason: string = ''): Promise<AxiosResponse<ApiResponse<any>>> => 
-    api.post(`/api/admin/live/stores/${storeId}/suspend`, { suspensionReason }),
+    Promise.resolve({
+      data: {
+        success: true,
+        message: "매장이 일시정지되었습니다.",
+        data: { storeId, suspensionReason }
+      }
+    } as any),
   
-  // 라이브 추천 관리
+  // 라이브 추천 관리 - 임시 빈 데이터
   getLiveRecommendations: (): Promise<AxiosResponse<ApiResponse<any[]>>> => 
-    api.get("/api/admin/live/recommendations"),
+    Promise.resolve({
+      data: {
+        success: true,
+        message: "라이브 추천 목록을 성공적으로 가져왔습니다.",
+        data: []
+      }
+    } as any),
   
   createLiveRecommendation: (data: {
     fromStoreId: string;
@@ -312,15 +461,32 @@ export const liveAPI = {
     priority: number;
     isActive: boolean;
   }): Promise<AxiosResponse<ApiResponse<any>>> => 
-    api.post("/api/admin/live/recommendations", data),
+    Promise.resolve({
+      data: {
+        success: true,
+        message: "라이브 추천이 생성되었습니다.",
+        data: { id: `live-rec-${Date.now()}`, ...data }
+      }
+    } as any),
   
-  updateLiveRecommendation: (id: string, data: any): Promise<AxiosResponse<ApiResponse<any>>> => 
-    api.put(`/api/admin/live/recommendations/${id}`, data),
+  updateLiveRecommendation: (_recommendationId: string, data: any): Promise<AxiosResponse<ApiResponse<any>>> => 
+    Promise.resolve({
+      data: {
+        success: true,
+        message: "라이브 추천이 수정되었습니다.",
+        data: { id: `live-rec-${Date.now()}`, ...data }
+      }
+    } as any),
   
-  deleteLiveRecommendation: (id: string): Promise<AxiosResponse<ApiResponse<void>>> => 
-    api.delete(`/api/admin/live/recommendations/${id}`),
+  deleteLiveRecommendation: (_recommendationId: string): Promise<AxiosResponse<ApiResponse<void>>> => 
+    Promise.resolve({
+      data: {
+        success: true,
+        message: "라이브 추천이 삭제되었습니다."
+      }
+    } as any),
   
-  // 라이브 분석
+  // 라이브 분석 - 임시 목 데이터
   getLiveAnalytics: (): Promise<AxiosResponse<ApiResponse<{
     overview: {
       totalStores: number;
@@ -340,19 +506,59 @@ export const liveAPI = {
       conversionRate: number;
     };
   }>>> => 
-    api.get("/api/admin/live/analytics"),
+    Promise.resolve({
+      data: {
+        success: true,
+        message: "라이브 분석 데이터를 성공적으로 가져왔습니다.",
+        data: {
+          overview: {
+            totalStores: 0,
+            activeStores: 0,
+            pendingStores: 0,
+            totalViews: 0,
+            totalQRScans: 0
+          },
+          trends: {
+            dailyViews: Array(7).fill(0),
+            dailyScans: Array(7).fill(0),
+            topCategories: []
+          },
+          performance: {
+            averageViewsPerStore: 0,
+            averageScansPerStore: 0,
+            conversionRate: 0
+          }
+        }
+      }
+    } as any),
   
   getStoreAnalytics: (storeId: string): Promise<AxiosResponse<ApiResponse<any>>> => 
-    api.get(`/api/admin/live/analytics/stores/${storeId}`),
+    Promise.resolve({
+      data: {
+        success: false,
+        message: `라이브 매장 분석 데이터를 찾을 수 없습니다. (ID: ${storeId})`
+      }
+    } as any),
   
-  // 라이브 설정
+  // 라이브 설정 - 임시 목 데이터
   getLiveSettings: (): Promise<AxiosResponse<ApiResponse<{
     isEnabled: boolean;
     requireApproval: boolean;
     maxStoresPerOwner: number;
     analyticsRetentionDays: number;
   }>>> => 
-    api.get("/api/admin/live/settings"),
+    Promise.resolve({
+      data: {
+        success: true,
+        message: "라이브 시스템 설정을 성공적으로 가져왔습니다.",
+        data: {
+          isEnabled: false, // 아직 라이브 시스템 비활성화
+          requireApproval: true,
+          maxStoresPerOwner: 5,
+          analyticsRetentionDays: 90
+        }
+      }
+    } as any),
   
   updateLiveSettings: (settings: {
     isEnabled?: boolean;
@@ -360,10 +566,16 @@ export const liveAPI = {
     maxStoresPerOwner?: number;
     analyticsRetentionDays?: number;
   }): Promise<AxiosResponse<ApiResponse<any>>> => 
-    api.put("/api/admin/live/settings", settings)
+    Promise.resolve({
+      data: {
+        success: true,
+        message: "라이브 시스템 설정이 업데이트되었습니다.",
+        data: settings
+      }
+    } as any)
 };
 
-// 🖥️ 시스템 관리 API (신규)
+// 🖥️ 시스템 관리 API (신규) - 임시 구현 (백엔드 API 구현 전까지)
 export const systemAPI = {
   getSystemHealth: (): Promise<AxiosResponse<ApiResponse<{
     status: string;
@@ -378,7 +590,26 @@ export const systemAPI = {
       type: string;
     };
   }>>> => 
-    api.get("/api/admin/system/health"),
+    Promise.resolve({
+      data: {
+        success: true,
+        message: "시스템 상태를 성공적으로 가져왔습니다.",
+        data: {
+          status: "healthy",
+          timestamp: new Date().toISOString(),
+          systems: {
+            demo: "active",
+            live: "preparing",
+            admin: "active"
+          },
+          admin: {
+            adminId: localStorage.getItem('admin_data') ? 
+              JSON.parse(localStorage.getItem('admin_data') || '{}').id || 'unknown' : 'unknown',
+            type: "super_admin"
+          }
+        }
+      }
+    } as any),
   
   getSystemStats: (): Promise<AxiosResponse<ApiResponse<{
     demo: {
@@ -400,7 +631,33 @@ export const systemAPI = {
       currentAdmin: string;
     };
   }>>> => 
-    api.get("/api/admin/system/stats")
+    Promise.resolve({
+      data: {
+        success: true,
+        message: "시스템 통계를 성공적으로 가져왔습니다.",
+        data: {
+          demo: {
+            stores: 4, // 현재 데모 매장 수
+            recommendations: 4, // 데모 추천 수
+            lastUpdated: new Date().toISOString()
+          },
+          live: {
+            stores: 0, // 라이브 매장 수
+            activeStores: 0,
+            pendingStores: 0,
+            totalViews: 0,
+            totalQRScans: 0,
+            lastUpdated: new Date().toISOString()
+          },
+          admin: {
+            totalAdmins: 1,
+            lastLogin: new Date().toISOString(),
+            currentAdmin: localStorage.getItem('admin_data') ? 
+              JSON.parse(localStorage.getItem('admin_data') || '{}').username || 'spotline-admin' : 'spotline-admin'
+          }
+        }
+      }
+    } as any)
 };
 
 // 📊 대시보드 API (통합 통계)
@@ -525,8 +782,72 @@ export const spotlineStartAPI = {
     storeAPI.getStores({ limit: 1000 })
 };
 
-// 하위 호환성을 위한 별칭
-export const operationalStoreAPI = storeAPI;
+// 하위 호환성을 위한 별칭 - real_ 접두사 필터링
+export const operationalStoreAPI = {
+  getStores: (params: { 
+    page?: number; 
+    limit?: number; 
+    category?: string; 
+    area?: string; 
+    active?: boolean;
+    search?: string;
+    status?: string;
+  } = {}): Promise<AxiosResponse<ApiResponse<{ stores: Store[]; pagination: any }>>> => 
+    storeAPI.getStores({ ...params, limit: 1000 }).then(response => {
+      const allStores = response.data.data?.stores || [];
+      const operationalStores = allStores.filter(store => 
+        store.qrCode?.id?.startsWith('real_')
+      );
+      
+      // 페이지네이션 재계산
+      const page = params.page || 1;
+      const limit = params.limit || 20;
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedStores = operationalStores.slice(startIndex, endIndex);
+      
+      return {
+        ...response,
+        data: {
+          ...response.data,
+          data: {
+            stores: paginatedStores,
+            pagination: {
+              page,
+              limit,
+              count: operationalStores.length,
+              total: Math.ceil(operationalStores.length / limit)
+            }
+          }
+        }
+      };
+    }),
+  
+  getStore: (id: string): Promise<AxiosResponse<ApiResponse<Store>>> => 
+    storeAPI.getStore(id),
+  
+  createStore: (data: Omit<Store, "_id" | "createdAt" | "updatedAt">): Promise<AxiosResponse<ApiResponse<Store>>> => {
+    // QR 코드에 real_ 접두사 자동 추가
+    const storeData = {
+      ...data,
+      qrCode: {
+        ...data.qrCode,
+        id: data.qrCode?.id || `real_${Date.now().toString().slice(-8)}`,
+        isActive: data.qrCode?.isActive !== false
+      }
+    };
+    return storeAPI.createStore(storeData);
+  },
+  
+  updateStore: (id: string, data: Partial<Store>): Promise<AxiosResponse<ApiResponse<Store>>> => 
+    storeAPI.updateStore(id, data),
+  
+  deleteStore: (id: string): Promise<AxiosResponse<ApiResponse<void>>> => 
+    storeAPI.deleteStore(id),
+  
+  toggleStatus: (id: string, isActive: boolean): Promise<AxiosResponse<ApiResponse<Store>>> => 
+    storeAPI.toggleStatus(id, isActive)
+};
 
 // SpotLine 체험 API (VERSION002 호환성 유지)
 export const experienceAPI = {

@@ -39,6 +39,7 @@ function App() {
           <Route path="operational-stores/new" element={<OperationalStores />} />
           <Route path="operational-stores/:id/edit" element={<OperationalStores />} />
           <Route path="spotline-start" element={<SpotlineStartSettings />} />
+          <Route path="demo" element={<DemoSystem />} />
           <Route path="demo-system" element={<DemoSystem />} />
           <Route path="live-system" element={<LiveSystem />} />
           <Route path="analytics" element={<Analytics />} />
