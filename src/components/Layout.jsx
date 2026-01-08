@@ -14,10 +14,11 @@ import { useState } from 'react'
 
 const navigation = [
   { name: '대시보드', href: '/dashboard', icon: LayoutDashboard },
-  { name: '매장 관리', href: '/stores', icon: Store },
-  { name: '추천 관리', href: '/recommendations', icon: ArrowRight },
-  { name: '분석', href: '/analytics', icon: BarChart3 },
-  { name: '어드민 관리', href: '/admins', icon: Users },
+  { name: '운영 매장 관리', href: '/operational-stores', icon: Store },
+  { name: 'SpotLine 시작 설정', href: '/spotline-start', icon: ArrowRight },
+  { name: '데모 시스템', href: '/demo-system', icon: BarChart3 },
+  { name: '분석 및 통계', href: '/analytics', icon: BarChart3 },
+  { name: '시스템 설정', href: '/system-settings', icon: Users },
 ]
 
 export default function Layout() {

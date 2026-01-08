@@ -17,7 +17,7 @@ import type {
   DemoStats,
 } from "../types";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 // Axios 인스턴스 생성
 const api = axios.create({
@@ -25,7 +25,7 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: false, // CORS 문제 임시 해결
+  withCredentials: true,
 });
 
 // 요청 인터셉터 - 토큰 자동 추가
@@ -42,207 +42,351 @@ api.interceptors.request.use(
   }
 );
 
-// 응답 인터셉터 - 401 에러 시 로그아웃
+// 응답 인터셉터 - 에러 처리 및 응답 변환
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // 백엔드 응답 형식에 맞게 변환
+    if (response.data && typeof response.data === "object") {
+      return response;
+    }
+    return response;
+  },
   (error) => {
+    console.error("API Error:", error);
+
+    // 401 에러 시 로그아웃
     if (error.response?.status === 401) {
       localStorage.removeItem("admin_token");
       localStorage.removeItem("admin_data");
       window.location.href = "/login";
     }
-    return Promise.reject(error);
+
+    // 에러 메시지 표준화
+    const errorMessage = error.response?.data?.message || error.message || "서버 오류가 발생했습니다.";
+
+    return Promise.reject({
+      ...error,
+      message: errorMessage,
+      status: error.response?.status,
+    });
   }
 );
 
-// 인증 API
+// 🔑 인증 API
 export const authAPI = {
-  // 관리자 로그인 (VERSION002 표준 계정)
-  login: (username: string, password: string): Promise<AxiosResponse<ApiResponse<LoginResponse>>> => api.post("/api/admin/login", { username, password }),
+  login: async (username: string, password: string): Promise<AxiosResponse<ApiResponse<LoginResponse>>> => {
+    try {
+      const response = await api.post("/api/admin/login", {
+        username,
+        password,
+      });
 
-  // 관리자 프로필 조회
+      if (response.data.success && response.data.data.token) {
+        localStorage.setItem("admin_token", response.data.data.token);
+        localStorage.setItem("admin_data", JSON.stringify(response.data.data.admin));
+      }
+
+      return response;
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    }
+  },
+
   getProfile: (): Promise<AxiosResponse<ApiResponse<Admin>>> => api.get("/api/admin/profile"),
 
-  // 토큰 검증
-  verifyToken: (): Promise<AxiosResponse<ApiResponse<{ valid: boolean }>>> => api.get("/api/admin/verify"),
+  verify: (): Promise<AxiosResponse<ApiResponse<{ valid: boolean }>>> => api.get("/api/admin/verify"),
 
-  // 관리자 계정 생성
   createAdmin: (data: Partial<Admin> & { password: string }): Promise<AxiosResponse<ApiResponse<Admin>>> => api.post("/api/admin/create", data),
+
+  logout: (): Promise<void> => {
+    localStorage.removeItem("admin_token");
+    localStorage.removeItem("admin_data");
+    return Promise.resolve();
+  },
 };
 
-// SpotLine 체험 API (VERSION002)
+// 📊 대시보드 API
+export const dashboardAPI = {
+  getStats: (): Promise<AxiosResponse<ApiResponse<DashboardStats>>> => api.get("/api/admin/dashboard/stats"),
+};
+
+// 🏪 매장 관리 API (운영 매장)
+export const operationalStoreAPI = {
+  getStores: (
+    params: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      category?: string;
+      status?: string;
+    } = {}
+  ): Promise<AxiosResponse<ApiResponse<{ stores: Store[]; pagination: any }>>> => {
+    const queryParams = {
+      page: params.page || 1,
+      limit: params.limit || 20,
+      ...(params.search && { search: params.search }),
+      ...(params.category && { category: params.category }),
+      ...(params.status && { status: params.status }),
+    };
+    return api.get("/api/admin/stores", { params: queryParams });
+  },
+
+  getStore: (id: string): Promise<AxiosResponse<ApiResponse<Store>>> => api.get(`/api/admin/stores/${id}`),
+
+  createStore: (data: Omit<Store, "_id" | "createdAt" | "updatedAt">): Promise<AxiosResponse<ApiResponse<Store>>> => {
+    // QR 코드 ID 자동 생성 (real_ 접두사)
+    const storeData = {
+      ...data,
+      qrCode: {
+        ...data.qrCode,
+        id: data.qrCode?.id || `real_${Date.now().toString().slice(-8)}`,
+      },
+    };
+    return api.post("/api/admin/stores", storeData);
+  },
+
+  updateStore: (id: string, data: Partial<Store>): Promise<AxiosResponse<ApiResponse<Store>>> => api.put(`/api/admin/stores/${id}`, data),
+
+  toggleStatus: (id: string, isActive: boolean): Promise<AxiosResponse<ApiResponse<Store>>> => api.patch(`/api/admin/stores/${id}/status`, { isActive }),
+
+  deleteStore: (id: string): Promise<AxiosResponse<ApiResponse<void>>> => api.delete(`/api/admin/stores/${id}`),
+};
+
+// 🎯 추천 관리 API
+export const recommendationAPI = {
+  getRecommendations: (
+    params: {
+      page?: number;
+      limit?: number;
+      fromStore?: string;
+      toStore?: string;
+    } = {}
+  ): Promise<AxiosResponse<ApiResponse<{ recommendations: Recommendation[]; pagination: any }>>> => {
+    const queryParams = {
+      page: params.page || 1,
+      limit: params.limit || 20,
+      ...(params.fromStore && { fromStore: params.fromStore }),
+      ...(params.toStore && { toStore: params.toStore }),
+    };
+    return api.get("/api/admin/recommendations", { params: queryParams });
+  },
+
+  createRecommendation: (data: {
+    fromStore: string;
+    toStore: string;
+    category: string;
+    priority?: number;
+    description: string;
+    tags?: string[];
+  }): Promise<AxiosResponse<ApiResponse<Recommendation>>> => {
+    const recommendationData = {
+      fromStore: data.fromStore,
+      toStore: data.toStore,
+      category: data.category,
+      priority: data.priority || 5,
+      description: data.description,
+      tags: data.tags || [],
+    };
+    return api.post("/api/admin/recommendations", recommendationData);
+  },
+
+  updateRecommendation: (id: string, data: Partial<Recommendation>): Promise<AxiosResponse<ApiResponse<Recommendation>>> => api.put(`/api/admin/recommendations/${id}`, data),
+
+  deleteRecommendation: (id: string): Promise<AxiosResponse<ApiResponse<void>>> => api.delete(`/api/admin/recommendations/${id}`),
+};
+
+// 📈 분석 및 통계 API
+export const analyticsAPI = {
+  getStoreAnalytics: (
+    params: {
+      period?: "day" | "week" | "month";
+      storeId?: string;
+    } = {}
+  ): Promise<AxiosResponse<ApiResponse<StoreAnalytics>>> => {
+    const queryParams = {
+      period: params.period || "month",
+      ...(params.storeId && { storeId: params.storeId }),
+    };
+    return api.get("/api/admin/analytics/stores", { params: queryParams });
+  },
+
+  getPopularStores: (params: Record<string, any> = {}): Promise<AxiosResponse<ApiResponse<any>>> => api.get("/api/admin/analytics/popular-stores", { params }),
+
+  getQRPerformance: (params: Record<string, any> = {}): Promise<AxiosResponse<ApiResponse<QRAnalytics>>> => api.get("/api/admin/analytics/qr-performance", { params }),
+
+  getRecommendationPerformance: (params: Record<string, any> = {}): Promise<AxiosResponse<ApiResponse<RecommendationPerformance[]>>> =>
+    api.get("/api/admin/analytics/recommendation-performance", { params }),
+};
+
+// SpotLine 시작 설정 API (VERSION003-FINAL 사양)
+export const spotlineStartAPI = {
+  getConfigs: (): Promise<AxiosResponse<ApiResponse<ExperienceConfig[]>>> => {
+    // 임시 목 데이터 - 실제 API 구현 시 교체
+    return Promise.resolve({
+      data: {
+        success: true,
+        data: {
+          configs: [
+            {
+              id: "config1",
+              name: "기본 시작 설정",
+              type: "random",
+              targetStores: ["store1", "store2", "store3"],
+              isActive: true,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        },
+      },
+    } as any);
+  },
+
+  createConfig: (data: Omit<ExperienceConfig, "_id" | "createdAt" | "updatedAt" | "usageCount">): Promise<AxiosResponse<ApiResponse<ExperienceConfig>>> => {
+    // 실제 API 엔드포인트로 교체 필요
+    return api.post("/api/admin/experience-configs", data);
+  },
+
+  updateConfig: (id: string, data: Partial<ExperienceConfig>): Promise<AxiosResponse<ApiResponse<ExperienceConfig>>> => api.put(`/api/admin/experience-configs/${id}`, data),
+
+  deleteConfig: (id: string): Promise<AxiosResponse<ApiResponse<void>>> => api.delete(`/api/admin/experience-configs/${id}`),
+
+  getAvailableStores: (): Promise<AxiosResponse<ApiResponse<{ stores: Store[]; pagination: any }>>> => operationalStoreAPI.getStores({ limit: 1000 }),
+};
+
+// 데모 시스템 API (VERSION003-FINAL 사양 - 읽기 전용)
+export const demoSystemAPI = {
+  getDemoStores: (): Promise<AxiosResponse<ApiResponse<{ stores: DemoStore[]; demoLinks: any }>>> => {
+    // 임시 목 데이터 - 실제 API 구현 시 교체
+    return Promise.resolve({
+      data: {
+        success: true,
+        data: {
+          stores: [
+            {
+              id: "demo1",
+              name: "카페 데모",
+              qrCodeId: "demo_cafe_001",
+              area: "강남역",
+              isDemoOnly: true,
+              shortDescription: "데모용 카페입니다",
+            },
+            {
+              id: "demo2",
+              name: "레스토랑 데모",
+              qrCodeId: "demo_restaurant_001",
+              area: "홍대입구",
+              isDemoOnly: true,
+              shortDescription: "데모용 레스토랑입니다",
+            },
+          ],
+          demoLinks: {
+            experience: "/api/demo/experience",
+            stores: "/api/demo/stores",
+          },
+        },
+      },
+    } as any);
+  },
+};
+
+// 어드민 관리 API
+export const adminAPI = {
+  getAdmins: (): Promise<AxiosResponse<ApiResponse<Admin[]>>> => {
+    // 임시 목 데이터 - 실제 API 구현 시 교체
+    return Promise.resolve({
+      data: {
+        success: true,
+        data: [
+          {
+            _id: "695bad104e53e6bb484d0b35",
+            username: "spotline-admin",
+            email: "admin@spotline.co.kr",
+            role: "super_admin",
+            lastLogin: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      },
+    } as any);
+  },
+
+  createAdmin: (data: Partial<Admin> & { password: string }): Promise<AxiosResponse<ApiResponse<Admin>>> => api.post("/api/admin/admins", data),
+
+  updatePermissions: (id: string, permissions: string[]): Promise<AxiosResponse<ApiResponse<Admin>>> => api.patch(`/api/admin/admins/${id}/permissions`, { permissions }),
+};
+
+// 데이터 내보내기 API
+export const exportAPI = {
+  exportData: (type: string, format: string, params: Record<string, any> = {}): Promise<AxiosResponse<Blob>> =>
+    api.get("/api/admin/export", {
+      params: { type, format, ...params },
+      responseType: "blob",
+    }),
+};
+
+// 지오코딩 API (주소 검색)
+export const geocodingAPI = {
+  searchAddress: async (query: string): Promise<AxiosResponse<any>> => {
+    const KAKAO_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY;
+
+    if (!KAKAO_API_KEY || KAKAO_API_KEY === "YOUR_KAKAO_REST_API_KEY") {
+      console.warn("Kakao API key not configured, using mock data");
+      return {
+        data: {
+          documents: [
+            {
+              address_name: `${query} 검색 결과 (목 데이터)`,
+              x: "126.9780",
+              y: "37.5665",
+            },
+          ],
+        },
+      } as any;
+    }
+
+    try {
+      const response = await axios.get("https://dapi.kakao.com/v2/local/search/address.json", {
+        params: { query },
+        headers: {
+          Authorization: `KakaoAK ${KAKAO_API_KEY}`,
+        },
+      });
+      return response;
+    } catch (error) {
+      console.error("Geocoding error:", error);
+      throw error;
+    }
+  },
+};
+
+// 하위 호환성을 위한 별칭
+export const storeAPI = operationalStoreAPI;
+
+// SpotLine 체험 API (VERSION002 호환성 유지)
 export const experienceAPI = {
-  // 체험하기 - 프론트엔드용
   getExperience: (): Promise<AxiosResponse<ApiResponse<ExperienceResult>>> => api.get("/api/experience"),
 
-  // SpotLine 매장 조회
   getSpotlineStore: (qrId: string): Promise<AxiosResponse<ApiResponse<SpotlineStore>>> => api.get(`/api/stores/spotline/${qrId}`),
 };
 
 // 체험 설정 관리 API (관리자용)
 export const experienceConfigAPI = {
-  // 모든 체험 설정 조회
   getConfigs: (): Promise<AxiosResponse<ApiResponse<ExperienceConfig[]>>> => api.get("/api/admin/experience-configs"),
 
-  // 기본 체험 설정 조회
   getDefaultConfig: (): Promise<AxiosResponse<ApiResponse<ExperienceConfig>>> => api.get("/api/admin/experience-configs/default"),
 
-  // 체험 설정 생성
   createConfig: (data: Omit<ExperienceConfig, "_id" | "createdAt" | "updatedAt" | "usageCount">): Promise<AxiosResponse<ApiResponse<ExperienceConfig>>> =>
     api.post("/api/admin/experience-configs", data),
 
-  // 체험 설정 수정
   updateConfig: (id: string, data: Partial<ExperienceConfig>): Promise<AxiosResponse<ApiResponse<ExperienceConfig>>> => api.put(`/api/admin/experience-configs/${id}`, data),
 
-  // 체험 설정 삭제
   deleteConfig: (id: string): Promise<AxiosResponse<ApiResponse<void>>> => api.delete(`/api/admin/experience-configs/${id}`),
 
-  // 체험 설정 미리보기
   previewConfig: (id: string, testCount: number = 10): Promise<AxiosResponse<ApiResponse<{ results: ExperienceResult[] }>>> =>
     api.get(`/api/admin/experience-configs/${id}/preview?testCount=${testCount}`),
 
-  // 기본 설정으로 지정
   setAsDefault: (id: string): Promise<AxiosResponse<ApiResponse<ExperienceConfig>>> => api.patch(`/api/admin/experience-configs/${id}/set-default`),
-};
-
-// 대시보드 API (VERSION002 업데이트)
-export const dashboardAPI = {
-  getStats: (): Promise<AxiosResponse<ApiResponse<DashboardStats>>> => api.get("/api/admin/dashboard/stats"),
-};
-
-// 매장 관리 API
-export const storeAPI = {
-  // 모든 매장 조회
-  getStores: (params?: { category?: string; area?: string; limit?: number }): Promise<AxiosResponse<ApiResponse<Store[]>>> => api.get("/api/stores", { params }),
-
-  // 특정 매장 조회
-  getStore: (id: string): Promise<AxiosResponse<ApiResponse<Store>>> => api.get(`/api/stores/${id}`),
-
-  // 매장 등록
-  createStore: (data: Omit<Store, "_id" | "createdAt" | "updatedAt">): Promise<AxiosResponse<ApiResponse<Store>>> => api.post("/api/stores", data),
-
-  // 매장 정보 수정
-  updateStore: (id: string, data: Partial<Store>): Promise<AxiosResponse<ApiResponse<Store>>> => api.put(`/api/stores/${id}`, data),
-
-  // 매장 삭제 (비활성화)
-  deleteStore: (id: string): Promise<AxiosResponse<ApiResponse<void>>> => api.delete(`/api/stores/${id}`),
-
-  // QR 코드로 매장 조회
-  getStoreByQR: (qrId: string): Promise<AxiosResponse<ApiResponse<Store>>> => api.get(`/api/stores/qr/${qrId}`),
-
-  // 근처 매장 검색
-  getNearbyStores: (lat: number, lng: number, radius?: number): Promise<AxiosResponse<ApiResponse<Store[]>>> => api.get(`/api/stores/nearby/${lat}/${lng}`, { params: { radius } }),
-};
-
-// 추천 관리 API
-export const recommendationAPI = {
-  // 추천 관계 생성
-  createRecommendation: (data: Omit<Recommendation, "_id" | "createdAt" | "updatedAt">): Promise<AxiosResponse<ApiResponse<Recommendation>>> => api.post("/api/recommendations", data),
-
-  // 추천 관계 수정
-  updateRecommendation: (id: string, data: Partial<Recommendation>): Promise<AxiosResponse<ApiResponse<Recommendation>>> => api.put(`/api/recommendations/${id}`, data),
-
-  // 추천 관계 삭제
-  deleteRecommendation: (id: string): Promise<AxiosResponse<ApiResponse<void>>> => api.delete(`/api/recommendations/${id}`),
-
-  // QR 코드별 추천 조회
-  getRecommendationsByQR: (qrId: string): Promise<AxiosResponse<ApiResponse<Recommendation[]>>> => api.get(`/api/recommendations/qr/${qrId}`),
-
-  // 매장별 추천 조회
-  getRecommendationsByStore: (storeId: string): Promise<AxiosResponse<ApiResponse<Recommendation[]>>> => api.get(`/api/recommendations/store/${storeId}`),
-
-  // 카테고리별 추천 통계
-  getCategoryStats: (): Promise<AxiosResponse<ApiResponse<Record<string, number>>>> => api.get("/api/recommendations/stats/categories"),
-
-  // 모든 추천 조회 (관리자용)
-  getRecommendations: (params?: { category?: string; limit?: number }): Promise<AxiosResponse<ApiResponse<Recommendation[]>>> => api.get("/api/recommendations", { params }),
-};
-
-// 분석 API (VERSION002 업데이트)
-export const analyticsAPI = {
-  // QR 코드별 통계
-  getQRAnalytics: (
-    qrId: string,
-    params?: {
-      startDate?: string;
-      endDate?: string;
-    }
-  ): Promise<AxiosResponse<ApiResponse<QRAnalytics>>> => api.get(`/api/analytics/qr/${qrId}`, { params }),
-
-  // 매장별 통계
-  getStoreAnalytics: (
-    storeId: string,
-    params?: {
-      period?: "day" | "week" | "month";
-    }
-  ): Promise<AxiosResponse<ApiResponse<StoreAnalytics>>> => api.get(`/api/analytics/store/${storeId}`, { params }),
-
-  // 추천 성과 분석
-  getRecommendationPerformance: (params?: { category?: string; limit?: number }): Promise<AxiosResponse<ApiResponse<RecommendationPerformance[]>>> =>
-    api.get("/api/analytics/recommendations/performance", { params }),
-
-  // 일별 트래픽 통계
-  getDailyTraffic: (params?: { days?: number }): Promise<AxiosResponse<ApiResponse<TrafficStats[]>>> => api.get("/api/analytics/traffic/daily", { params }),
-
-  // 체험 설정별 통계 (새로 추가)
-  getExperienceStats: (configId?: string): Promise<AxiosResponse<ApiResponse<any>>> => api.get("/api/analytics/experience", { params: { configId } }),
-
-  // 이벤트 로깅
-  logEvent: (data: { qrCode: string; eventType: string; targetStore?: string; metadata?: Record<string, any> }): Promise<AxiosResponse<ApiResponse<void>>> => api.post("/api/analytics/event", data),
-};
-
-// 지오코딩 API
-export const geocodingAPI = {
-  // 통합 지오코딩
-  unified: (address: string): Promise<AxiosResponse<ApiResponse<any>>> => api.get("/api/geocoding/unified", { params: { address } }),
-
-  // 네이버 지오코딩
-  naver: (address: string): Promise<AxiosResponse<ApiResponse<any>>> => api.get("/api/geocoding/naver", { params: { address } }),
-
-  // 구글 지오코딩
-  google: (address: string): Promise<AxiosResponse<ApiResponse<any>>> => api.get("/api/geocoding/google", { params: { address } }),
-
-  // 좌표 유효성 검증
-  validate: (coordinates: { lat: number; lng: number }): Promise<AxiosResponse<ApiResponse<any>>> => api.post("/api/geocoding/validate", coordinates),
-};
-
-// 데모 매장 관리 API (새로 추가)
-export const demoStoreAPI = {
-  // 데모 매장 목록 조회 (관리자용)
-  getDemoStores: (): Promise<AxiosResponse<ApiResponse<DemoStore[]>>> => api.get("/api/admin/demo-stores"),
-
-  // 데모 매장 생성
-  createDemoStore: (data: Omit<DemoStore, "_id" | "createdAt" | "updatedAt">): Promise<AxiosResponse<ApiResponse<DemoStore>>> => api.post("/api/admin/demo-stores", data),
-
-  // 데모 매장 수정
-  updateDemoStore: (id: string, data: Partial<DemoStore>): Promise<AxiosResponse<ApiResponse<DemoStore>>> => api.put(`/api/admin/demo-stores/${id}`, data),
-
-  // 데모 매장 활성화/비활성화
-  toggleDemoStore: (id: string, isActive: boolean): Promise<AxiosResponse<ApiResponse<DemoStore>>> => api.patch(`/api/admin/demo-stores/${id}`, { isActive }),
-
-  // 데모 매장 삭제
-  deleteDemoStore: (id: string): Promise<AxiosResponse<ApiResponse<void>>> => api.delete(`/api/admin/demo-stores/${id}`),
-
-  // 데모 사용 통계
-  getDemoStats: (): Promise<AxiosResponse<ApiResponse<DemoStats>>> => api.get("/api/admin/demo-stats"),
-};
-
-// 어드민 관리 API (기존 호환성 유지)
-export const adminAPI = {
-  getAdmins: (): Promise<AxiosResponse<ApiResponse<Admin[]>>> => api.get("/api/admin/list"),
-
-  createAdmin: (data: Partial<Admin> & { password: string }): Promise<AxiosResponse<ApiResponse<Admin>>> => authAPI.createAdmin(data),
-
-  updatePermissions: (id: string, permissions: string[]): Promise<AxiosResponse<ApiResponse<Admin>>> => api.patch(`/api/admin/${id}/permissions`, { permissions }),
-};
-
-// 데이터 내보내기 API
-export const exportAPI = {
-  exportData: (type: string, format: string, params?: Record<string, any>): Promise<AxiosResponse<Blob>> =>
-    api.get("/api/admin/export", {
-      params: { type, format, ...params },
-      responseType: "blob",
-    }),
 };
 
 export default api;

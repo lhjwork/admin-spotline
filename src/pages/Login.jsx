@@ -37,6 +37,12 @@ export default function Login() {
           <p className="mt-2 text-center text-sm text-gray-600">
             관리자 계정으로 로그인하세요
           </p>
+          {/* 디버깅용 - 프로덕션에서는 제거 */}
+          {import.meta.env.DEV && (
+            <div className="mt-2 text-center text-xs text-gray-500">
+              API URL: {import.meta.env.VITE_API_URL || '설정되지 않음'}
+            </div>
+          )}
         </div>
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
