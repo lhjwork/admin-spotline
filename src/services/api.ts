@@ -3,18 +3,15 @@ import type {
   Store,
   Recommendation,
   Admin,
-  DashboardStats,
   ApiResponse,
   LoginResponse,
   QRAnalytics,
   StoreAnalytics,
   RecommendationPerformance,
-  TrafficStats,
   ExperienceResult,
   ExperienceConfig,
   SpotlineStore,
   DemoStore,
-  DemoStats,
 } from "../types";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "";

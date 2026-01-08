@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { useParams, useNavigate } from 'react-router-dom'
 import { operationalStoreAPI } from '../services/api'
+import { Store as StoreType } from '../types'
 import { 
   Search, 
   Plus,
@@ -15,7 +16,12 @@ import {
 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 
-const CATEGORIES = [
+interface Category {
+  value: string;
+  label: string;
+}
+
+const CATEGORIES: Category[] = [
   { value: '', label: '전체 카테고리' },
   { value: 'cafe', label: '카페' },
   { value: 'restaurant', label: '레스토랑' },
@@ -26,8 +32,38 @@ const CATEGORIES = [
   { value: 'other', label: '기타' }
 ]
 
-function StoreForm({ store, onSubmit, onCancel, loading }) {
-  const { register, handleSubmit, formState: { errors }, reset } = useForm({
+interface StoreFormData {
+  name: string;
+  category: string;
+  location: {
+    address: string;
+    coordinates: [number, number];
+    area: string;
+  };
+  qrCode: {
+    id: string;
+    isActive: boolean;
+  };
+  shortDescription: string;
+  representativeImage: string;
+  spotlineStory: string;
+  externalLinks: {
+    instagram: string;
+    website: string;
+    blog: string;
+    notion: string;
+  };
+}
+
+interface StoreFormProps {
+  store?: StoreType | null;
+  onSubmit: (data: StoreFormData) => void;
+  onCancel: () => void;
+  loading: boolean;
+}
+
+function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<StoreFormData>({
     defaultValues: store || {
       name: '',
       category: '',
@@ -335,14 +371,22 @@ function StoreForm({ store, onSubmit, onCancel, loading }) {
   )
 }
 
+interface StoreFilters {
+  page: number;
+  limit: number;
+  search: string;
+  category: string;
+  status: string;
+}
+
 export default function OperationalStores() {
-  const { id } = useParams()
+  const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const isEditing = Boolean(id)
   const isCreating = window.location.pathname.includes('/new')
   
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<StoreFilters>({
     page: 1,
     limit: 20,
     search: '',

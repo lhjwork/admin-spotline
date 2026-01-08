@@ -16,14 +16,41 @@ import {
   Filter
 } from 'lucide-react'
 
-const STATUS_OPTIONS = [
+interface StatusOption {
+  value: string;
+  label: string;
+}
+
+interface LiveStore {
+  storeId: string;
+  name: string;
+  category: string;
+  status: string;
+  ownerId: string;
+  createdAt: string;
+  analytics: {
+    totalViews: number;
+    qrScans: number;
+    recommendations: number;
+  };
+}
+
+interface StoreApprovalModalProps {
+  store: LiveStore;
+  onApprove: (note: string) => void;
+  onSuspend: (reason: string) => void;
+  onClose: () => void;
+  loading: boolean;
+}
+
+const STATUS_OPTIONS: StatusOption[] = [
   { value: '', label: '전체 상태' },
   { value: 'active', label: '활성' },
   { value: 'pending', label: '승인 대기' },
   { value: 'suspended', label: '정지' }
 ]
 
-const CATEGORY_OPTIONS = [
+const CATEGORY_OPTIONS: StatusOption[] = [
   { value: '', label: '전체 카테고리' },
   { value: 'cafe', label: '카페' },
   { value: 'restaurant', label: '레스토랑' },
@@ -33,7 +60,7 @@ const CATEGORY_OPTIONS = [
   { value: 'other', label: '기타' }
 ]
 
-function StoreApprovalModal({ store, onApprove, onSuspend, onClose, loading }) {
+function StoreApprovalModal({ store, onApprove, onSuspend, onClose, loading }: StoreApprovalModalProps) {
   const [approvalNote, setApprovalNote] = useState('')
   const [suspensionReason, setSuspensionReason] = useState('')
 
