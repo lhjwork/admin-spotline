@@ -1,19 +1,14 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Layout from "./components/Layout";
-import DemoLayout from "./components/DemoLayout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import Stores from "./pages/Stores";
-import Recommendations from "./pages/Recommendations";
+import OperationalStores from "./pages/OperationalStores";
+import SpotlineStartSettings from "./pages/SpotlineStartSettings";
+import DemoSystem from "./pages/DemoSystem";
+import LiveSystem from "./pages/LiveSystem";
 import Analytics from "./pages/Analytics";
-import Admins from "./pages/Admins";
-import ExperienceConfigs from "./pages/ExperienceConfigs";
-import DemoDashboard from "./pages/demo/DemoDashboard";
-import DemoStores from "./pages/demo/DemoStores";
-import DemoExperienceConfigs from "./pages/demo/DemoExperienceConfigs";
-import DemoAnalytics from "./pages/demo/DemoAnalytics";
-import ExtensionDetector from "./components/ExtensionDetector";
+import SystemSettings from "./pages/SystemSettings";
 import { ReactNode } from "react";
 
 interface ProtectedRouteProps {
@@ -28,41 +23,26 @@ function ProtectedRoute({ children }: ProtectedRouteProps) {
 function App() {
   return (
     <AuthProvider>
-      <ExtensionDetector />
       <Routes>
         <Route path="/login" element={<Login />} />
-
-        {/* 실제 운영 관리 (메인) */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
+        <Route path="/" element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }>
           <Route index element={<Navigate to="/dashboard" />} />
           <Route path="dashboard" element={<Dashboard />} />
-          <Route path="stores" element={<Stores />} />
-          <Route path="recommendations" element={<Recommendations />} />
+          <Route path="stores" element={<OperationalStores />} />
+          <Route path="stores/new" element={<OperationalStores />} />
+          <Route path="stores/:id/edit" element={<OperationalStores />} />
+          <Route path="operational-stores" element={<OperationalStores />} />
+          <Route path="operational-stores/new" element={<OperationalStores />} />
+          <Route path="operational-stores/:id/edit" element={<OperationalStores />} />
+          <Route path="spotline-start" element={<SpotlineStartSettings />} />
+          <Route path="demo-system" element={<DemoSystem />} />
+          <Route path="live-system" element={<LiveSystem />} />
           <Route path="analytics" element={<Analytics />} />
-          <Route path="admins" element={<Admins />} />
-          <Route path="experience-configs" element={<ExperienceConfigs />} />
-        </Route>
-
-        {/* 데모 시스템 관리 (별도 레이아웃) */}
-        <Route
-          path="/demo"
-          element={
-            <ProtectedRoute>
-              <DemoLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<DemoDashboard />} />
-          <Route path="stores" element={<DemoStores />} />
-          <Route path="experience-configs" element={<DemoExperienceConfigs />} />
-          <Route path="analytics" element={<DemoAnalytics />} />
+          <Route path="system-settings" element={<SystemSettings />} />
         </Route>
       </Routes>
     </AuthProvider>
