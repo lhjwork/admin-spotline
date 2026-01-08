@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard'
 import OperationalStores from './pages/OperationalStores'
 import SpotlineStartSettings from './pages/SpotlineStartSettings'
 import DemoSystem from './pages/DemoSystem'
+import LiveSystem from './pages/LiveSystem'
 import Analytics from './pages/Analytics'
 import SystemSettings from './pages/SystemSettings'
 
@@ -26,11 +27,15 @@ function App() {
         }>
           <Route index element={<Navigate to="/dashboard" />} />
           <Route path="dashboard" element={<Dashboard />} />
+          <Route path="stores" element={<OperationalStores />} />
+          <Route path="stores/new" element={<OperationalStores />} />
+          <Route path="stores/:id/edit" element={<OperationalStores />} />
           <Route path="operational-stores" element={<OperationalStores />} />
           <Route path="operational-stores/new" element={<OperationalStores />} />
           <Route path="operational-stores/:id/edit" element={<OperationalStores />} />
           <Route path="spotline-start" element={<SpotlineStartSettings />} />
           <Route path="demo-system" element={<DemoSystem />} />
+          <Route path="live-system" element={<LiveSystem />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="system-settings" element={<SystemSettings />} />
         </Route>
