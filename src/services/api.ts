@@ -469,6 +469,65 @@ export const geocodingAPI = {
   }
 };
 
+// 📈 분석 API (통합)
+export const analyticsAPI = {
+  getData: (params: Record<string, any> = {}): Promise<AxiosResponse<ApiResponse<any>>> => 
+    api.get("/api/admin/analytics", { params }),
+  
+  getPopularStores: (params: Record<string, any> = {}): Promise<AxiosResponse<ApiResponse<any>>> => 
+    api.get("/api/admin/analytics/popular-stores", { params }),
+  
+  getQRPerformance: (params: Record<string, any> = {}): Promise<AxiosResponse<ApiResponse<QRAnalytics>>> => 
+    api.get("/api/admin/analytics/qr-performance", { params }),
+  
+  getRecommendationPerformance: (params: Record<string, any> = {}): Promise<AxiosResponse<ApiResponse<RecommendationPerformance[]>>> => 
+    api.get("/api/admin/analytics/recommendation-performance", { params }),
+  
+  getStoreAnalytics: (storeId: string, params: { period?: "day" | "week" | "month" } = {}): Promise<AxiosResponse<ApiResponse<StoreAnalytics>>> => {
+    const queryParams = {
+      period: params.period || 'month',
+      storeId
+    };
+    return api.get("/api/admin/analytics/stores", { params: queryParams });
+  }
+};
+
+// 🚀 SpotLine 시작 설정 API
+export const spotlineStartAPI = {
+  getConfigs: (): Promise<AxiosResponse<ApiResponse<ExperienceConfig[]>>> => {
+    // 임시 목 데이터 - 실제 API 구현 시 교체
+    return Promise.resolve({
+      data: {
+        success: true,
+        data: [
+          {
+            id: "config1",
+            name: "기본 시작 설정",
+            type: "random",
+            targetStores: ["store1", "store2", "store3"],
+            isActive: true,
+            createdAt: new Date().toISOString()
+          }
+        ]
+      }
+    } as any);
+  },
+  
+  createConfig: (data: Omit<ExperienceConfig, "_id" | "createdAt" | "updatedAt" | "usageCount">): Promise<AxiosResponse<ApiResponse<ExperienceConfig>>> => {
+    // 실제 API 엔드포인트로 교체 필요
+    return api.post("/api/admin/experience-configs", data);
+  },
+  
+  updateConfig: (id: string, data: Partial<ExperienceConfig>): Promise<AxiosResponse<ApiResponse<ExperienceConfig>>> => 
+    api.put(`/api/admin/experience-configs/${id}`, data),
+  
+  deleteConfig: (id: string): Promise<AxiosResponse<ApiResponse<void>>> => 
+    api.delete(`/api/admin/experience-configs/${id}`),
+  
+  getAvailableStores: (): Promise<AxiosResponse<ApiResponse<{ stores: Store[]; pagination: any }>>> => 
+    storeAPI.getStores({ limit: 1000 })
+};
+
 // 하위 호환성을 위한 별칭
 export const operationalStoreAPI = storeAPI;
 
