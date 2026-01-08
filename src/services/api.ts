@@ -25,6 +25,7 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: false, // CORS 문제 임시 해결
 });
 
 // 요청 인터셉터 - 토큰 자동 추가
