@@ -19,6 +19,8 @@ interface Coordinates {
 
 interface AddressSelectData {
   address: string;
+  detailAddress: string;
+  fullAddress: string;
   coordinates: Coordinates | null;
   addressData: AddressData;
 }
@@ -26,6 +28,7 @@ interface AddressSelectData {
 interface DaumAddressEmbedProps {
   onAddressSelect: (data: AddressSelectData) => void;
   initialAddress?: string;
+  initialDetailAddress?: string;
   initialCoordinates?: Coordinates | null;
 }
 
@@ -65,9 +68,11 @@ declare global {
 export default function DaumAddressEmbed({ 
   onAddressSelect, 
   initialAddress = '', 
+  initialDetailAddress = '',
   initialCoordinates = null 
 }: DaumAddressEmbedProps) {
   const [address, setAddress] = useState<string>(initialAddress);
+  const [detailAddress, setDetailAddress] = useState<string>(initialDetailAddress);
   const [coordinates, setCoordinates] = useState<Coordinates | null>(initialCoordinates);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
@@ -82,8 +87,37 @@ export default function DaumAddressEmbed({
 
   useEffect(() => {
     setAddress(initialAddress);
+    setDetailAddress(initialDetailAddress);
     setCoordinates(initialCoordinates);
-  }, [initialAddress, initialCoordinates]);
+  }, [initialAddress, initialDetailAddress, initialCoordinates]);
+
+  // 상세 주소 변경 처리
+  const handleDetailAddressChange = (value: string) => {
+    setDetailAddress(value);
+    
+    // 기본 주소가 있을 때만 부모 컴포넌트에 전달
+    if (address) {
+      const addressData: AddressData = {
+        zonecode: '',
+        roadAddress: address,
+        jibunAddress: '',
+        buildingName: '',
+        sido: '',
+        sigungu: '',
+        bname: ''
+      };
+      
+      const fullAddress = value ? `${address} ${value}` : address;
+      
+      onAddressSelect({
+        address,
+        detailAddress: value,
+        fullAddress,
+        coordinates,
+        addressData
+      });
+    }
+  };
 
   // 카카오 지도 SDK 동적 로드
   const loadKakaoMapSDK = () => {
@@ -327,8 +361,12 @@ export default function DaumAddressEmbed({
         bname: ''
       };
       
+      const fullAddress = detailAddress ? `${address} ${detailAddress}` : address;
+      
       onAddressSelect({
         address,
+        detailAddress,
+        fullAddress,
         coordinates,
         addressData
       });
@@ -379,6 +417,7 @@ export default function DaumAddressEmbed({
             };
 
             setAddress(fullAddress);
+            setDetailAddress(''); // 새 주소 선택 시 상세 주소 초기화
 
             // 좌표 변환 시도
             const coords = await getCoordinatesFromAddress(fullAddress);
@@ -389,6 +428,8 @@ export default function DaumAddressEmbed({
             // 부모 컴포넌트에 결과 전달
             const finalResult = {
               address: fullAddress,
+              detailAddress: '',
+              fullAddress: fullAddress,
               coordinates: coords,
               addressData: addressData
             };
@@ -444,6 +485,22 @@ export default function DaumAddressEmbed({
             )}
           </button>
         </div>
+
+        {/* 상세 주소 입력 */}
+        {address && (
+          <div>
+            <input
+              type="text"
+              value={detailAddress}
+              onChange={(e) => handleDetailAddressChange(e.target.value)}
+              placeholder="상세 주소를 입력해주세요 (동, 호수 등)"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <div className="mt-1 text-xs text-gray-500">
+              💡 아파트 동/호수, 건물명, 층수 등 상세한 위치 정보를 입력해주세요
+            </div>
+          </div>
+        )}
 
         {/* 좌표 정보 표시 */}
         {coordinates && (

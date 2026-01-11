@@ -214,8 +214,8 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
             </label>
             <DaumAddressEmbed
               onAddressSelect={(data) => {
-                // 주소 정보 설정
-                setValue('location.address', data.address)
+                // 주소 정보 설정 (상세 주소 포함)
+                setValue('location.address', data.fullAddress)
                 
                 // 좌표 정보가 있으면 설정
                 if (data.coordinates) {
@@ -230,6 +230,7 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
                 }
               }}
               initialAddress={store?.location?.address || ''}
+              initialDetailAddress=""
               initialCoordinates={store?.location?.coordinates ? {
                 lat: store.location.coordinates.coordinates[1],
                 lng: store.location.coordinates.coordinates[0]
