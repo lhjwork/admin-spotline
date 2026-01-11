@@ -9,6 +9,8 @@ import DemoSystem from "./pages/DemoSystem";
 import LiveSystem from "./pages/LiveSystem";
 import Analytics from "./pages/Analytics";
 import SystemSettings from "./pages/SystemSettings";
+import Admins from "./pages/Admins";
+import Recommendations from "./pages/Recommendations";
 import { ReactNode } from "react";
 
 interface ProtectedRouteProps {
@@ -43,6 +45,8 @@ function App() {
           <Route path="demo-system" element={<DemoSystem />} />
           <Route path="live-system" element={<LiveSystem />} />
           <Route path="analytics" element={<Analytics />} />
+          <Route path="recommendations" element={<Recommendations />} />
+          <Route path="admins" element={<Admins />} />
           <Route path="system-settings" element={<SystemSettings />} />
         </Route>
       </Routes>

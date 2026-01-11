@@ -5,25 +5,31 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Spotline Admin</title>
-    <!-- Content Security Policy to prevent extension injection -->
+    <!-- Content Security Policy - 개발 환경에서는 비활성화 -->
+    <!-- 
     <meta
       http-equiv="Content-Security-Policy"
       content="
-      default-src 'self';
-      script-src 'self' 'unsafe-inline' 'unsafe-eval' t1.daumcdn.net;
-      style-src 'self' 'unsafe-inline';
-      img-src 'self' data: blob:;
-      connect-src 'self' http://localhost:4000 https: wss:;
-      font-src 'self' data:;
+      default-src 'self' 'unsafe-inline' 'unsafe-eval' *;
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' * blob: data:;
+      style-src 'self' 'unsafe-inline' *;
+      img-src 'self' data: blob: *;
+      connect-src 'self' * data: blob:;
+      font-src 'self' data: *;
       object-src 'none';
       base-uri 'self';
-      form-action 'self';
+      form-action 'self' *;
+      frame-src 'self' * data: blob:;
+      child-src 'self' * data: blob:;
     "
     />
+    -->
   </head>
   <body>
     <div id="root"></div>
-    <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+    <!-- 다음 우편번호 서비스 -->
+    <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+    <!-- 카카오 지도 SDK는 컴포넌트에서 동적으로 로드 -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -15,6 +15,7 @@ import {
   Store
 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
+import DaumAddressEmbed from '../components/DaumAddressEmbed'
 
 interface Category {
   value: string;
@@ -44,15 +45,16 @@ interface StoreFormData {
     id: string;
     isActive: boolean;
   };
-  shortDescription: string;
-  representativeImage: string;
-  spotlineStory: string;
-  externalLinks: {
-    instagram: string;
+  description: string;
+  images: string[];
+  contact: {
+    phone: string;
     website: string;
-    blog: string;
-    notion: string;
+    instagram: string;
   };
+  businessHours: Record<string, { open: string; close: string }>;
+  tags: string[];
+  isActive?: boolean;
 }
 
 interface StoreFormProps {
@@ -63,8 +65,32 @@ interface StoreFormProps {
 }
 
 function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<StoreFormData>({
-    defaultValues: store || {
+  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<StoreFormData>({
+    defaultValues: store ? {
+      name: store.name || '',
+      category: store.category || '',
+      location: {
+        address: store.location?.address || '',
+        coordinates: store.location?.coordinates ? 
+          [store.location.coordinates.coordinates[0], store.location.coordinates.coordinates[1]] : 
+          [0, 0],
+        area: store.location?.area || ''
+      },
+      qrCode: {
+        id: store.qrCode?.id || '',
+        isActive: store.qrCode?.isActive !== false
+      },
+      description: store.description || '',
+      images: store.images || [''],
+      contact: {
+        phone: store.contact?.phone || '',
+        website: store.contact?.website || '',
+        instagram: store.contact?.instagram || ''
+      },
+      businessHours: store.businessHours || {},
+      tags: store.tags || [],
+      isActive: store.isActive !== false
+    } : {
       name: '',
       category: '',
       location: {
@@ -76,26 +102,51 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
         id: '',
         isActive: true
       },
-      shortDescription: '',
-      representativeImage: '',
-      spotlineStory: '',
-      externalLinks: {
-        instagram: '',
+      description: '',
+      images: [''],
+      contact: {
+        phone: '',
         website: '',
-        blog: '',
-        notion: ''
+        instagram: ''
       },
+      businessHours: {},
+      tags: [],
       isActive: true
     }
   })
 
   useEffect(() => {
     if (store) {
-      reset(store)
+      const formData: StoreFormData = {
+        name: store.name || '',
+        category: store.category || '',
+        location: {
+          address: store.location?.address || '',
+          coordinates: store.location?.coordinates ? 
+            [store.location.coordinates.coordinates[0], store.location.coordinates.coordinates[1]] : 
+            [0, 0],
+          area: store.location?.area || ''
+        },
+        qrCode: {
+          id: store.qrCode?.id || '',
+          isActive: store.qrCode?.isActive !== false
+        },
+        description: store.description || '',
+        images: store.images || [''],
+        contact: {
+          phone: store.contact?.phone || '',
+          website: store.contact?.website || '',
+          instagram: store.contact?.instagram || ''
+        },
+        businessHours: store.businessHours || {},
+        tags: store.tags || [],
+        isActive: store.isActive !== false
+      };
+      reset(formData);
     }
   }, [store, reset])
 
-  const onFormSubmit = (data) => {
+  const onFormSubmit = (data: StoreFormData) => {
     // QR 코드 ID 자동 생성 (real_ 접두사)
     if (!data.qrCode.id) {
       data.qrCode.id = `real_${Date.now().toString().slice(-8)}`
@@ -161,11 +212,28 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               주소 *
             </label>
-            <input
-              {...register('location.address', { required: '주소를 입력하세요' })}
-              type="text"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-              placeholder="서울시 강남구 테헤란로 123"
+            <DaumAddressEmbed
+              onAddressSelect={(data) => {
+                // 주소 정보 설정
+                setValue('location.address', data.address)
+                
+                // 좌표 정보가 있으면 설정
+                if (data.coordinates) {
+                  setValue('location.coordinates.0', data.coordinates.lng)
+                  setValue('location.coordinates.1', data.coordinates.lat)
+                }
+                
+                // 지역 정보 설정
+                if (data.addressData) {
+                  const area = data.addressData.bname || data.addressData.sigungu || ''
+                  setValue('location.area', area)
+                }
+              }}
+              initialAddress={store?.location?.address || ''}
+              initialCoordinates={store?.location?.coordinates ? {
+                lat: store.location.coordinates.coordinates[1],
+                lng: store.location.coordinates.coordinates[0]
+              } : null}
             />
             {errors.location?.address && (
               <p className="mt-1 text-sm text-red-600">{errors.location.address.message}</p>
@@ -175,7 +243,7 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                경도 *
+                경도 (자동 입력됨)
               </label>
               <input
                 {...register('location.coordinates.0', { 
@@ -184,14 +252,16 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
                 })}
                 type="number"
                 step="any"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                placeholder="127.0276"
+                readOnly
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                placeholder="주소 검색 시 자동 입력"
               />
+              <p className="mt-1 text-xs text-gray-500">주소 검색 시 자동으로 입력됩니다</p>
             </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                위도 *
+                위도 (자동 입력됨)
               </label>
               <input
                 {...register('location.coordinates.1', { 
@@ -200,21 +270,25 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
                 })}
                 type="number"
                 step="any"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                placeholder="37.4979"
+                readOnly
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                placeholder="주소 검색 시 자동 입력"
               />
+              <p className="mt-1 text-xs text-gray-500">주소 검색 시 자동으로 입력됩니다</p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                지역 *
+                지역 (자동 입력됨)
               </label>
               <input
                 {...register('location.area', { required: '지역을 입력하세요' })}
                 type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                placeholder="강남역"
+                readOnly
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                placeholder="주소 검색 시 자동 입력"
               />
+              <p className="mt-1 text-xs text-gray-500">주소 검색 시 자동으로 입력됩니다</p>
             </div>
           </div>
         </div>
@@ -241,73 +315,64 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
 
         {/* SpotLine 정보 */}
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900">SpotLine 정보</h3>
+          <h3 className="text-lg font-medium text-gray-900">매장 정보</h3>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              한 문장 설명 * (최대 100자)
-            </label>
-            <input
-              {...register('shortDescription', { 
-                required: '한 문장 설명을 입력하세요',
-                maxLength: { value: 100, message: '100자 이내로 입력하세요' }
-              })}
-              type="text"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-              placeholder="조용한 분위기의 프리미엄 카페"
-            />
-            {errors.shortDescription && (
-              <p className="mt-1 text-sm text-red-600">{errors.shortDescription.message}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              대표 이미지 URL *
-            </label>
-            <input
-              {...register('representativeImage', { required: '대표 이미지 URL을 입력하세요' })}
-              type="url"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-              placeholder="https://example.com/image.jpg"
-            />
-            {errors.representativeImage && (
-              <p className="mt-1 text-sm text-red-600">{errors.representativeImage.message}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              SpotLine 스토리 (최대 500자)
+              매장 설명 (최대 500자)
             </label>
             <textarea
-              {...register('spotlineStory', {
+              {...register('description', {
                 maxLength: { value: 500, message: '500자 이내로 입력하세요' }
               })}
               rows={4}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-              placeholder="이 매장만의 특별한 이야기를 들려주세요..."
+              placeholder="매장에 대한 상세한 설명을 입력하세요..."
             />
-            {errors.spotlineStory && (
-              <p className="mt-1 text-sm text-red-600">{errors.spotlineStory.message}</p>
+            {errors.description && (
+              <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
             )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              대표 이미지 URL
+            </label>
+            <input
+              {...register('images.0')}
+              type="url"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+              placeholder="https://example.com/image.jpg"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              태그 (쉼표로 구분)
+            </label>
+            <input
+              {...register('tags')}
+              type="text"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+              placeholder="조용한, 프리미엄, 데이트코스"
+            />
           </div>
         </div>
 
-        {/* 외부 링크 */}
+        {/* 연락처 정보 */}
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900">외부 링크</h3>
+          <h3 className="text-lg font-medium text-gray-900">연락처 정보</h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Instagram
+                전화번호
               </label>
               <input
-                {...register('externalLinks.instagram')}
-                type="url"
+                {...register('contact.phone')}
+                type="tel"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                placeholder="https://instagram.com/store_name"
+                placeholder="02-1234-5678"
               />
             </div>
 
@@ -316,7 +381,7 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
                 웹사이트
               </label>
               <input
-                {...register('externalLinks.website')}
+                {...register('contact.website')}
                 type="url"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
                 placeholder="https://store-website.com"
@@ -325,25 +390,13 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                블로그
+                Instagram
               </label>
               <input
-                {...register('externalLinks.blog')}
+                {...register('contact.instagram')}
                 type="url"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                placeholder="https://blog.naver.com/store_name"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Notion
-              </label>
-              <input
-                {...register('externalLinks.notion')}
-                type="url"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                placeholder="https://notion.so/store_page"
+                placeholder="https://instagram.com/store_name"
               />
             </div>
           </div>
@@ -413,9 +466,9 @@ export default function OperationalStores() {
 
   const { data: editStore } = useQuery(
     ['operational-store', id],
-    () => operationalStoreAPI.getStore(id),
+    () => id ? operationalStoreAPI.getStore(id) : Promise.reject('No ID'),
     {
-      enabled: isEditing,
+      enabled: isEditing && !!id,
       select: (response) => {
         const responseData = response.data
         if (responseData.success) {
@@ -427,21 +480,21 @@ export default function OperationalStores() {
   )
 
   const createMutation = useMutation(
-    (data) => operationalStoreAPI.createStore(data),
+    (data: StoreFormData) => operationalStoreAPI.createStore(data as any),
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['operational-stores'])
         navigate('/operational-stores')
         alert('운영 매장이 등록되었습니다.')
       },
-      onError: (error) => {
+      onError: (error: any) => {
         alert('매장 등록에 실패했습니다: ' + error.message)
       }
     }
   )
 
   const updateMutation = useMutation(
-    ({ id, data }) => operationalStoreAPI.updateStore(id, data),
+    ({ id, data }: { id: string; data: StoreFormData }) => operationalStoreAPI.updateStore(id, data as any),
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['operational-stores'])
@@ -452,7 +505,7 @@ export default function OperationalStores() {
   )
 
   const toggleStatusMutation = useMutation(
-    ({ id, isActive }) => operationalStoreAPI.toggleStatus(id, isActive),
+    ({ id, isActive }: { id: string; isActive: boolean }) => operationalStoreAPI.toggleStatus(id, isActive),
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['operational-stores'])
@@ -461,7 +514,7 @@ export default function OperationalStores() {
   )
 
   const deleteMutation = useMutation(
-    (id) => operationalStoreAPI.deleteStore(id),
+    (id: string) => operationalStoreAPI.deleteStore(id),
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['operational-stores'])
@@ -469,15 +522,15 @@ export default function OperationalStores() {
     }
   )
 
-  const handleSubmitStore = (data) => {
-    if (isEditing) {
+  const handleSubmitStore = (data: StoreFormData) => {
+    if (isEditing && id) {
       updateMutation.mutate({ id, data })
     } else {
       createMutation.mutate(data)
     }
   }
 
-  const handleToggleStatus = (store) => {
+  const handleToggleStatus = (store: any) => {
     if (confirm(`${store.name} 매장을 ${store.isActive ? '비활성화' : '활성화'}하시겠습니까?`)) {
       toggleStatusMutation.mutate({
         id: store._id,
@@ -486,7 +539,7 @@ export default function OperationalStores() {
     }
   }
 
-  const handleDelete = (store) => {
+  const handleDelete = (store: any) => {
     if (confirm(`${store.name} 매장을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) {
       deleteMutation.mutate(store._id)
     }
@@ -506,7 +559,7 @@ export default function OperationalStores() {
         </div>
 
         <StoreForm
-          store={editStore}
+          store={(editStore && typeof editStore === 'object' && '_id' in editStore) ? editStore as StoreType : null}
           onSubmit={handleSubmitStore}
           onCancel={() => navigate('/operational-stores')}
           loading={createMutation.isLoading || updateMutation.isLoading}
@@ -527,12 +580,22 @@ export default function OperationalStores() {
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-        데이터를 불러오는데 실패했습니다.
+        데이터를 불러오는데 실패했습니다: {(error as any)?.message || '알 수 없는 오류'}
       </div>
     )
   }
 
-  const { stores, pagination } = data
+  const storesData = data && typeof data === 'object' && 'stores' in data ? data : { stores: [], pagination: null }
+  const stores = storesData.stores || []
+  const pagination = storesData.pagination
+
+  if (!stores || !Array.isArray(stores)) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded">
+        매장 데이터를 불러오는 중입니다...
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -652,7 +715,7 @@ export default function OperationalStores() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {stores.map((store) => (
+                {stores.map((store: any) => (
                   <tr key={store._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>

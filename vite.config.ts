@@ -12,13 +12,5 @@ export default defineConfig({
       "Referrer-Policy": "strict-origin-when-cross-origin",
       "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
     },
-    // 개발 환경에서 프록시 사용
-    proxy: {
-      "/api": {
-        target: "http://localhost:4000",
-        changeOrigin: true,
-        secure: false,
-      },
-    },
   },
 });

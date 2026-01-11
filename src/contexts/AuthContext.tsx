@@ -43,7 +43,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (token && adminData) {
         try {
           console.log("🔍 Verifying token...");
-          await authAPI.verifyToken();
+          await authAPI.verify();
           const parsedAdmin = JSON.parse(adminData);
           console.log("✅ Parsed admin data:", parsedAdmin);
           setAdmin(parsedAdmin);
