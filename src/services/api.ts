@@ -9,6 +9,7 @@ export { adminAPI } from './admin/adminAPI';
 export { storeAPI } from './stores/storeAPI';
 export { operationalStoreAPI } from './stores/operationalStoreAPI';
 export { demoAPI } from './demo/demoAPI';
+export { liveAPI } from './live/liveAPI';
 export { recommendationAPI } from './recommendations/recommendationAPI';
 export { s3UploadAPI } from './upload/s3UploadAPI';
 export { analyticsAPI } from './analytics/analyticsAPI';
