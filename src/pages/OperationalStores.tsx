@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import DaumAddressEmbed from '../components/DaumAddressEmbed'
+import ImageUpload from '../components/ImageUpload'
 
 interface Category {
   value: string;
@@ -46,7 +47,10 @@ interface StoreFormData {
     isActive: boolean;
   };
   description: string;
-  images: string[];
+  images: {
+    representative: string;
+    gallery: string[];
+  };
   contact: {
     phone: string;
     website: string;
@@ -81,7 +85,10 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
         isActive: store.qrCode?.isActive !== false
       },
       description: store.description || '',
-      images: store.images || [''],
+      images: {
+        representative: store.images?.[0] || '',
+        gallery: store.images?.slice(1) || []
+      },
       contact: {
         phone: store.contact?.phone || '',
         website: store.contact?.website || '',
@@ -103,7 +110,10 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
         isActive: true
       },
       description: '',
-      images: [''],
+      images: {
+        representative: '',
+        gallery: []
+      },
       contact: {
         phone: '',
         website: '',
@@ -114,6 +124,10 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
       isActive: true
     }
   })
+
+  // 이미지 업로드 상태 관리
+  const [uploadedImages, setUploadedImages] = useState<any[]>([])
+  const [representativeImageId, setRepresentativeImageId] = useState<string | null>(null)
 
   useEffect(() => {
     if (store) {
@@ -132,7 +146,10 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
           isActive: store.qrCode?.isActive !== false
         },
         description: store.description || '',
-        images: store.images || [''],
+        images: {
+          representative: store.images?.[0] || '',
+          gallery: store.images?.slice(1) || []
+        },
         contact: {
           phone: store.contact?.phone || '',
           website: store.contact?.website || '',
@@ -143,8 +160,52 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
         isActive: store.isActive !== false
       };
       reset(formData);
+
+      // 기존 이미지 데이터를 업로드 컴포넌트 형식으로 변환
+      if (store.images && store.images.length > 0) {
+        const existingImages = store.images.map((url, index) => ({
+          id: `existing-${index}`,
+          url: url,
+          filename: `image-${index + 1}.jpg`,
+          size: 0,
+          isUploading: false
+        }))
+        setUploadedImages(existingImages)
+        setRepresentativeImageId(existingImages[0]?.id || null)
+      }
     }
   }, [store, reset])
+
+  // 이미지 업로드 변경 처리
+  const handleImagesChange = (images: any[]) => {
+    setUploadedImages(images)
+    
+    // 폼 데이터 업데이트
+    const imageUrls = images.filter(img => !img.isUploading).map(img => img.url)
+    const representative = images.find(img => img.id === representativeImageId)?.url || imageUrls[0] || ''
+    const gallery = imageUrls.filter(url => url !== representative)
+    
+    setValue('images.representative', representative)
+    setValue('images.gallery', gallery)
+  }
+
+  // 대표 이미지 변경 처리
+  const handleRepresentativeChange = (imageId: string | null) => {
+    setRepresentativeImageId(imageId)
+    
+    if (imageId) {
+      const representativeImage = uploadedImages.find(img => img.id === imageId)
+      if (representativeImage) {
+        setValue('images.representative', representativeImage.url)
+        
+        // 갤러리 이미지 업데이트 (대표 이미지 제외)
+        const galleryUrls = uploadedImages
+          .filter(img => img.id !== imageId && !img.isUploading)
+          .map(img => img.url)
+        setValue('images.gallery', galleryUrls)
+      }
+    }
+  }
 
   const onFormSubmit = (data: StoreFormData) => {
     // QR 코드 ID 자동 생성 (real_ 접두사)
@@ -152,7 +213,13 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
       data.qrCode.id = `real_${Date.now().toString().slice(-8)}`
     }
     
-    onSubmit(data)
+    // 이미지 데이터를 기존 형식으로 변환 (하위 호환성)
+    const finalData = {
+      ...data,
+      images: [data.images.representative, ...data.images.gallery].filter(Boolean)
+    }
+    
+    onSubmit(finalData as any)
   }
 
   return (
@@ -335,16 +402,23 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
             )}
           </div>
 
+          {/* 이미지 업로드 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              대표 이미지 URL
+              매장 이미지 *
             </label>
-            <input
-              {...register('images.0')}
-              type="url"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-              placeholder="https://example.com/image.jpg"
+            <ImageUpload
+              onImagesChange={handleImagesChange}
+              maxImages={5}
+              maxSizeInMB={5}
+              acceptedFormats={['image/jpeg', 'image/png', 'image/webp']}
+              representativeImageId={representativeImageId}
+              onRepresentativeChange={handleRepresentativeChange}
+              initialImages={uploadedImages}
             />
+            <p className="mt-1 text-xs text-gray-500">
+              첫 번째 이미지가 대표 이미지로 사용됩니다. 최대 5개까지 업로드 가능합니다.
+            </p>
           </div>
 
           <div>

@@ -14,6 +14,7 @@ import {
   Star
 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
+import ImageUpload from '../components/ImageUpload'
 
 const CATEGORIES = [
   { value: 'cafe', label: '카페' },
@@ -25,7 +26,7 @@ const CATEGORIES = [
 ]
 
 function DemoStoreForm({ store, onSubmit, onCancel, loading }) {
-  const { register, handleSubmit, formState: { errors }, reset } = useForm({
+  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm({
     defaultValues: store || {
       name: '',
       shortDescription: '',
@@ -38,11 +39,53 @@ function DemoStoreForm({ store, onSubmit, onCancel, loading }) {
     }
   })
 
+  // 이미지 업로드 상태 관리
+  const [uploadedImages, setUploadedImages] = useState<any[]>([])
+  const [representativeImageId, setRepresentativeImageId] = useState<string | null>(null)
+
   useEffect(() => {
     if (store) {
       reset(store)
+      
+      // 기존 이미지가 있으면 업로드 컴포넌트 형식으로 변환
+      if (store.representativeImage) {
+        const existingImage = {
+          id: 'existing-1',
+          url: store.representativeImage,
+          filename: 'representative-image.jpg',
+          size: 0,
+          isUploading: false
+        }
+        setUploadedImages([existingImage])
+        setRepresentativeImageId(existingImage.id)
+      }
     }
   }, [store, reset])
+
+  // 이미지 업로드 변경 처리
+  const handleImagesChange = (images: any[]) => {
+    setUploadedImages(images)
+    
+    // 대표 이미지 URL 업데이트
+    const representativeImage = images.find(img => img.id === representativeImageId && !img.isUploading)
+    if (representativeImage) {
+      setValue('representativeImage', representativeImage.url)
+    } else if (images.length > 0 && !images[0].isUploading) {
+      setValue('representativeImage', images[0].url)
+    }
+  }
+
+  // 대표 이미지 변경 처리
+  const handleRepresentativeChange = (imageId: string | null) => {
+    setRepresentativeImageId(imageId)
+    
+    if (imageId) {
+      const representativeImage = uploadedImages.find(img => img.id === imageId)
+      if (representativeImage && !representativeImage.isUploading) {
+        setValue('representativeImage', representativeImage.url)
+      }
+    }
+  }
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
@@ -114,13 +157,16 @@ function DemoStoreForm({ store, onSubmit, onCancel, loading }) {
         {/* 대표 이미지 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            대표 이미지 URL *
+            대표 이미지 *
           </label>
-          <input
-            {...register('representativeImage', { required: '대표 이미지 URL을 입력하세요' })}
-            type="url"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            placeholder="https://example.com/image.jpg"
+          <ImageUpload
+            onImagesChange={handleImagesChange}
+            maxImages={1}
+            maxSizeInMB={5}
+            acceptedFormats={['image/jpeg', 'image/png', 'image/webp']}
+            representativeImageId={representativeImageId}
+            onRepresentativeChange={handleRepresentativeChange}
+            initialImages={uploadedImages}
           />
           {errors.representativeImage && (
             <p className="mt-1 text-sm text-red-600">{errors.representativeImage.message}</p>
@@ -204,7 +250,7 @@ function DemoStoreForm({ store, onSubmit, onCancel, loading }) {
 }
 
 function DemoRecommendationForm({ recommendation, onSubmit, onCancel, loading }) {
-  const { register, handleSubmit, formState: { errors }, reset } = useForm({
+  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm({
     defaultValues: recommendation || {
       name: '',
       shortDescription: '',
@@ -215,11 +261,53 @@ function DemoRecommendationForm({ recommendation, onSubmit, onCancel, loading })
     }
   })
 
+  // 이미지 업로드 상태 관리
+  const [uploadedImages, setUploadedImages] = useState<any[]>([])
+  const [representativeImageId, setRepresentativeImageId] = useState<string | null>(null)
+
   useEffect(() => {
     if (recommendation) {
       reset(recommendation)
+      
+      // 기존 이미지가 있으면 업로드 컴포넌트 형식으로 변환
+      if (recommendation.representativeImage) {
+        const existingImage = {
+          id: 'existing-1',
+          url: recommendation.representativeImage,
+          filename: 'recommendation-image.jpg',
+          size: 0,
+          isUploading: false
+        }
+        setUploadedImages([existingImage])
+        setRepresentativeImageId(existingImage.id)
+      }
     }
   }, [recommendation, reset])
+
+  // 이미지 업로드 변경 처리
+  const handleImagesChange = (images: any[]) => {
+    setUploadedImages(images)
+    
+    // 대표 이미지 URL 업데이트
+    const representativeImage = images.find(img => img.id === representativeImageId && !img.isUploading)
+    if (representativeImage) {
+      setValue('representativeImage', representativeImage.url)
+    } else if (images.length > 0 && !images[0].isUploading) {
+      setValue('representativeImage', images[0].url)
+    }
+  }
+
+  // 대표 이미지 변경 처리
+  const handleRepresentativeChange = (imageId: string | null) => {
+    setRepresentativeImageId(imageId)
+    
+    if (imageId) {
+      const representativeImage = uploadedImages.find(img => img.id === imageId)
+      if (representativeImage && !representativeImage.isUploading) {
+        setValue('representativeImage', representativeImage.url)
+      }
+    }
+  }
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
@@ -318,13 +406,16 @@ function DemoRecommendationForm({ recommendation, onSubmit, onCancel, loading })
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            대표 이미지 URL *
+            대표 이미지 *
           </label>
-          <input
-            {...register('representativeImage', { required: '대표 이미지 URL을 입력하세요' })}
-            type="url"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            placeholder="https://example.com/image.jpg"
+          <ImageUpload
+            onImagesChange={handleImagesChange}
+            maxImages={1}
+            maxSizeInMB={5}
+            acceptedFormats={['image/jpeg', 'image/png', 'image/webp']}
+            representativeImageId={representativeImageId}
+            onRepresentativeChange={handleRepresentativeChange}
+            initialImages={uploadedImages}
           />
           {errors.representativeImage && (
             <p className="mt-1 text-sm text-red-600">{errors.representativeImage.message}</p>
