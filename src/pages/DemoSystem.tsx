@@ -167,6 +167,8 @@ function DemoStoreForm({ store, onSubmit, onCancel, loading }) {
             representativeImageId={representativeImageId}
             onRepresentativeChange={handleRepresentativeChange}
             initialImages={uploadedImages}
+            storeId={store?.id}
+            isRepresentativeOnly={true}
           />
           {errors.representativeImage && (
             <p className="mt-1 text-sm text-red-600">{errors.representativeImage.message}</p>
@@ -416,6 +418,8 @@ function DemoRecommendationForm({ recommendation, onSubmit, onCancel, loading })
             representativeImageId={representativeImageId}
             onRepresentativeChange={handleRepresentativeChange}
             initialImages={uploadedImages}
+            storeId={recommendation?.id}
+            isRepresentativeOnly={true}
           />
           {errors.representativeImage && (
             <p className="mt-1 text-sm text-red-600">{errors.representativeImage.message}</p>

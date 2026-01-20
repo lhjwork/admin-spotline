@@ -415,9 +415,13 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
               representativeImageId={representativeImageId}
               onRepresentativeChange={handleRepresentativeChange}
               initialImages={uploadedImages}
+              storeId={store?._id} // 기존 매장 수정 시에만 storeId 전달
             />
             <p className="mt-1 text-xs text-gray-500">
-              첫 번째 이미지가 대표 이미지로 사용됩니다. 최대 5개까지 업로드 가능합니다.
+              {store?._id 
+                ? "첫 번째 이미지가 대표 이미지로 사용됩니다. 최대 5개까지 업로드 가능합니다."
+                : "매장을 먼저 저장한 후 이미지를 업로드할 수 있습니다. 임시로 URL을 입력하거나 매장 저장 후 이미지를 업로드하세요."
+              }
             </p>
           </div>
 

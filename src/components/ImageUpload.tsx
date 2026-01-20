@@ -18,6 +18,8 @@ interface ImageUploadProps {
   representativeImageId?: string
   onRepresentativeChange?: (imageId: string | null) => void
   initialImages?: UploadedImage[]
+  storeId?: string // 매장 ID (업로드 시 필요)
+  isRepresentativeOnly?: boolean // 대표 이미지만 업로드할지 여부
 }
 
 const ACCEPTED_FORMATS = ['image/jpeg', 'image/png', 'image/webp']
@@ -30,7 +32,9 @@ export default function ImageUpload({
   acceptedFormats = ACCEPTED_FORMATS,
   representativeImageId,
   onRepresentativeChange,
-  initialImages = []
+  initialImages = [],
+  storeId,
+  isRepresentativeOnly = false
 }: ImageUploadProps) {
   const [images, setImages] = useState<UploadedImage[]>(initialImages)
   const [isDragging, setIsDragging] = useState(false)
@@ -40,7 +44,7 @@ export default function ImageUpload({
   // 파일 유효성 검사
   const validateFile = (file: File): string | null => {
     if (!acceptedFormats.includes(file.type)) {
-      return `지원하지 않는 파일 형식입니다. (${acceptedFormats.map(f => f.split('/')[1]).join(', ')} 만 지원)`
+      return `지원하지 않는 파일 형식입니다. (${acceptedFormats.map(f => f.split('/')[1]?.toUpperCase() || '').join(', ')} 만 지원)`
     }
     
     if (file.size > maxSizeInMB * 1024 * 1024) {
@@ -56,55 +60,46 @@ export default function ImageUpload({
 
   // S3 업로드 함수 (실제 API 호출)
   const uploadToS3 = async (file: File, onProgress?: (progress: number) => void): Promise<string> => {
-    const formData = new FormData()
-    formData.append('image', file)
-    formData.append('type', 'store') // 매장 이미지 타입
-    
     try {
       const token = localStorage.getItem('admin_token')
       if (!token) {
         throw new Error('인증 토큰이 없습니다.')
       }
 
-      // XMLHttpRequest를 사용하여 업로드 진행률 추적
-      return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest()
-        
-        xhr.upload.addEventListener('progress', (event) => {
-          if (event.lengthComputable && onProgress) {
-            const progress = Math.round((event.loaded / event.total) * 100)
-            onProgress(progress)
-          }
-        })
-        
-        xhr.addEventListener('load', () => {
-          if (xhr.status === 200) {
-            try {
-              const response = JSON.parse(xhr.responseText)
-              if (response.success) {
-                resolve(response.data.url)
-              } else {
-                reject(new Error(response.message || '업로드에 실패했습니다.'))
-              }
-            } catch (error) {
-              reject(new Error('서버 응답을 처리할 수 없습니다.'))
-            }
-          } else {
-            reject(new Error(`업로드 실패: ${xhr.status}`))
-          }
-        })
-        
-        xhr.addEventListener('error', () => {
-          reject(new Error('네트워크 오류가 발생했습니다.'))
-        })
-        
-        xhr.open('POST', `${import.meta.env.VITE_S3_API_URL || 'http://localhost:4001/api'}/upload/image`)
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`)
-        xhr.send(formData)
-      })
+      // storeId가 없으면 임시 업로드 (매장 생성 전)
+      if (!storeId) {
+        console.warn('storeId가 없어서 임시 업로드를 사용합니다. 매장 생성 후 다시 업로드해주세요.');
+        // 임시로 기존 방식 사용 (호환성)
+        const { s3UploadAPI } = await import('../services/upload/s3UploadAPI');
+        const response = await s3UploadAPI.uploadImage(file, 'store');
+        return response.data.data.url;
+      }
+
+      // 대표 이미지 또는 첫 번째 이미지인 경우
+      const isRepresentative = isRepresentativeOnly || images.length === 0;
+      
+      if (isRepresentative) {
+        // 대표 이미지 업로드
+        const { s3UploadAPI } = await import('../services/upload/s3UploadAPI');
+        if (onProgress) {
+          return await s3UploadAPI.uploadRepresentativeImageWithProgress(storeId, file, onProgress);
+        } else {
+          const response = await s3UploadAPI.uploadRepresentativeImage(storeId, file);
+          return response.data.data.url;
+        }
+      } else {
+        // 갤러리 이미지 업로드
+        const { s3UploadAPI } = await import('../services/upload/s3UploadAPI');
+        if (onProgress) {
+          return await s3UploadAPI.uploadGalleryImageWithProgress(storeId, file, onProgress);
+        } else {
+          const response = await s3UploadAPI.uploadGalleryImage(storeId, file);
+          return response.data.data.url;
+        }
+      }
     } catch (error) {
-      console.error('S3 upload error:', error)
-      throw error
+      console.error('Upload error:', error);
+      throw error;
     }
   }
 
@@ -185,7 +180,7 @@ export default function ImageUpload({
 
     // 대표 이미지가 삭제된 경우
     if (representativeImageId === imageId && onRepresentativeChange) {
-      const newRepresentative = updatedImages.length > 0 ? updatedImages[0].id : null
+      const newRepresentative = updatedImages.length > 0 ? updatedImages[0]?.id || null : null
       onRepresentativeChange(newRepresentative)
     }
   }
@@ -268,7 +263,7 @@ export default function ImageUpload({
               이미지를 드래그하거나 클릭하여 업로드
             </p>
             <p className="text-sm text-gray-500 mt-1">
-              {acceptedFormats.map(f => f.split('/')[1].toUpperCase()).join(', ')} 파일, 
+              {acceptedFormats.map(f => f.split('/')[1]?.toUpperCase() || '').join(', ')} 파일, 
               최대 {maxSizeInMB}MB, {maxImages}개까지
             </p>
           </div>
