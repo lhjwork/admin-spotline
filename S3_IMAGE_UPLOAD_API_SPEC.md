@@ -1,8 +1,10 @@
-# 이미지 업로드 API 명세서
+# 메인 배너 이미지 업로드 API 명세서
 
 ## 개요
 
-SpotLine Admin 시스템에서 매장 이미지 업로드를 위한 API 명세서입니다.
+SpotLine Admin 시스템에서 매장 메인 배너 이미지 업로드를 위한 API 명세서입니다.
+
+**✅ 업데이트 완료**: 백엔드 변경사항에 맞춰 프론트엔드가 완전히 업데이트되었습니다.
 
 ## 기본 정보
 
@@ -10,13 +12,29 @@ SpotLine Admin 시스템에서 매장 이미지 업로드를 위한 API 명세�
 - **인증 방식**: JWT Bearer Token
 - **Content-Type**: `multipart/form-data` (업로드), `application/json` (기타)
 
+## ⚠️ 중요 사항
+
+**매장 ID 필수**: 이미지 업로드는 매장이 먼저 생성된 후에만 가능합니다. 새 매장 등록 시에는 다음 순서를 따라야 합니다:
+
+1. 매장 기본 정보 저장 (POST `/api/admin/live/stores`)
+2. 반환된 `storeId`로 이미지 업로드
+3. 필요시 매장 정보 업데이트 (PUT `/api/admin/live/stores/{storeId}`)
+
+**✅ 메인 배너 이미지 시스템 적용 완료**:
+- ~~기존 `representativeImage` + `images`~~ → **새로운 `mainBannerImages` 배열**
+- 최대 5개의 메인 배너 이미지 업로드 가능
+- 이미지 추가 시 기존 이미지들 유지 (누적 업로드)
+- 개별 이미지 삭제 가능
+- 필드명은 `image` (단수형)를 사용합니다
+- **대표 이미지/갤러리 구분 제거**: 모든 이미지가 메인 배너로 동일하게 처리됩니다
+
 ## API 엔드포인트
 
-### 1. 대표 이미지 업로드
+### 1. 메인 배너 이미지 업로드
 
-**POST** `/api/admin/stores/{storeId}/representative-image`
+**POST** `/api/admin/live/stores/{storeId}/main-banner-images`
 
-매장의 대표 이미지를 업로드합니다.
+매장의 메인 배너 이미지를 업로드합니다. 기존 이미지들은 유지되고 새 이미지가 추가됩니다.
 
 #### 요청
 
@@ -38,6 +56,7 @@ image: File (required) - 업로드할 이미지 파일
 - 지원 형식: JPG, PNG, WebP
 - 최대 파일 크기: 5MB
 - 파일명: 영문, 숫자, 하이픈, 언더스코어만 허용
+- 최대 5개까지 업로드 가능
 
 #### 응답
 
@@ -45,108 +64,109 @@ image: File (required) - 업로드할 이미지 파일
 ```json
 {
   "success": true,
-  "message": "대표 이미지가 성공적으로 업로드되었습니다.",
+  "message": "메인 배너 이미지가 성공적으로 업로드되었습니다.",
   "data": {
-    "url": "https://spotline-bucket.s3.ap-northeast-2.amazonaws.com/stores/representative/2024/01/20/uuid-filename.jpg",
-    "key": "stores/representative/2024/01/20/uuid-filename.jpg",
-    "originalName": "store-image.jpg",
+    "url": "https://spotline-bucket.s3.ap-northeast-2.amazonaws.com/stores/main-banner/2024/01/20/uuid-filename.jpg",
+    "key": "stores/main-banner/2024/01/20/uuid-filename.jpg",
+    "originalName": "banner-image.jpg",
     "size": 1024000,
     "contentType": "image/jpeg"
   }
 }
 ```
 
-### 2. 갤러리 이미지 업로드
+### 2. 메인 배너 이미지 삭제
 
-**POST** `/api/admin/stores/{storeId}/images`
+**DELETE** `/api/admin/live/stores/{storeId}/main-banner-images/{imageKey}`
 
-매장의 갤러리 이미지를 업로드합니다.
+매장의 특정 메인 배너 이미지를 삭제합니다.
 
 #### 요청
 
 **Headers:**
 ```
 Authorization: Bearer {JWT_TOKEN}
-Content-Type: multipart/form-data
+```
+
+**Path Parameters:**
+- `storeId` (required): 매장 ID
+- `imageKey` (required): 삭제할 이미지의 S3 키 (URL 인코딩 필요)
+
+#### 응답
+
+**성공 (200 OK):**
+```json
+{
+  "success": true,
+  "message": "메인 배너 이미지가 성공적으로 삭제되었습니다."
+}
+```
+
+### 3. 매장 정보 조회 (메인 배너 이미지 포함)
+
+**GET** `/api/admin/live/stores/{storeId}`
+
+매장의 모든 정보를 조회합니다 (메인 배너 이미지 배열 포함).
+
+#### 요청
+
+**Headers:**
+```
+Authorization: Bearer {JWT_TOKEN}
 ```
 
 **Path Parameters:**
 - `storeId` (required): 매장 ID
 
-**Body (Form Data):**
-```
-image: File (required) - 업로드할 이미지 파일
-```
-
 #### 응답
 
 **성공 (200 OK):**
 ```json
 {
   "success": true,
-  "message": "갤러리 이미지가 성공적으로 업로드되었습니다.",
+  "message": "매장 정보를 성공적으로 조회했습니다.",
   "data": {
-    "url": "https://spotline-bucket.s3.ap-northeast-2.amazonaws.com/stores/gallery/2024/01/20/uuid-filename.jpg",
-    "key": "stores/gallery/2024/01/20/uuid-filename.jpg",
-    "originalName": "gallery-image.jpg",
-    "size": 1024000,
-    "contentType": "image/jpeg"
+    "_id": "store123",
+    "name": "우드코티지",
+    "category": "cafe",
+    "mainBannerImages": [
+      "stores/main-banner/2024/01/20/uuid-banner1.jpg",
+      "stores/main-banner/2024/01/20/uuid-banner2.jpg",
+      "stores/main-banner/2024/01/20/uuid-banner3.jpg"
+    ],
+    "location": {
+      "address": "서울시 강남구 테헤란로 123",
+      "coordinates": {
+        "type": "Point",
+        "coordinates": [127.0276, 37.4979]
+      },
+      "area": "강남구"
+    }
   }
 }
 ```
 
-### 3. 이미지 삭제
+**이미지 URL 생성:**
+```javascript
+const S3_BASE_URL = 'https://lhj-spotline-assets-2026.s3.ap-northeast-2.amazonaws.com';
 
-**DELETE** `/api/admin/images/{imageKey}`
-
-업로드된 이미지를 삭제합니다.
-
-#### 요청
-
-**Headers:**
-```
-Authorization: Bearer {JWT_TOKEN}
+// 메인 배너 이미지 URLs
+const mainBannerImageUrls = storeData.mainBannerImages?.map(imageKey => 
+  `${S3_BASE_URL}/${imageKey}`
+) || [];
 ```
 
-**Parameters:**
-- `imageKey` (path): S3 객체 키 (URL 인코딩 필요)
+## 호환성 라우트 (제거됨)
 
-#### 응답
+~~이전 버전에서 사용되던 다음 엔드포인트들은 제거되었습니다:~~
+- ~~`POST /api/admin/live/stores/{storeId}/representative-image`~~ (deprecated)
+- ~~`POST /api/admin/live/stores/{storeId}/images`~~ (deprecated)
+- ~~`DELETE /api/admin/live/stores/{storeId}/representative-image`~~ (deprecated)
+- ~~`DELETE /api/admin/live/images/{imageKey}`~~ (deprecated)
 
-**성공 (200 OK):**
-```json
-{
-  "success": true,
-  "message": "이미지가 성공적으로 삭제되었습니다."
-}
-```
-
-## 호환성 라우트 (선택사항)
-
-백엔드에서 호환성을 위해 다음 라우트도 지원할 수 있습니다:
-
-- `POST /api/upload/{storeId}/representative-image` → `POST /api/admin/stores/{storeId}/representative-image`
-- `POST /api/upload/{storeId}/images` → `POST /api/admin/stores/{storeId}/images`
-
-## S3 버킷 구조
-
-```
-spotline-bucket/
-├── stores/
-│   ├── representative/
-│   │   ├── 2024/
-│   │   │   ├── 01/
-│   │   │   │   ├── 20/
-│   │   │   │   │   ├── {uuid}-{filename}.jpg
-│   │   │   │   │   └── {uuid}-{filename}.png
-│   │   │   │   └── 21/
-│   │   │   └── 02/
-│   │   └── 2025/
-│   └── gallery/
-│       ├── 2024/
-│       └── 2025/
-└── temp/
-```
+**현재 지원되는 엔드포인트만 사용하세요:**
+- `POST /api/admin/live/stores/{storeId}/main-banner-images`
+- `DELETE /api/admin/live/stores/{storeId}/main-banner-images/{imageKey}`
 
 ## 에러 응답
 
@@ -180,15 +200,16 @@ spotline-bucket/
 }
 ```
 
-**실패 (404 Not Found):**
+**실패 (400 Bad Request - 이미지 개수 초과):**
 ```json
 {
   "success": false,
   "error": {
-    "code": "STORE_NOT_FOUND",
-    "message": "매장을 찾을 수 없습니다.",
+    "code": "MAX_IMAGES_EXCEEDED",
+    "message": "최대 이미지 개수를 초과했습니다.",
     "details": {
-      "storeId": "store123"
+      "maxImages": 5,
+      "currentImages": 5
     }
   }
 }
@@ -200,23 +221,24 @@ spotline-bucket/
 |------|------|-----------|
 | `INVALID_FILE_FORMAT` | 지원하지 않는 파일 형식 | 400 |
 | `FILE_TOO_LARGE` | 파일 크기 초과 | 413 |
+| `MAX_IMAGES_EXCEEDED` | 최대 이미지 개수 초과 | 400 |
 | `STORE_NOT_FOUND` | 매장을 찾을 수 없음 | 404 |
-| `UPLOAD_FAILED` | S3 업로드 실패 | 500 |
 | `IMAGE_NOT_FOUND` | 이미지를 찾을 수 없음 | 404 |
+| `UPLOAD_FAILED` | S3 업로드 실패 | 500 |
 | `DELETE_FAILED` | S3 삭제 실패 | 500 |
 | `UNAUTHORIZED` | 인증 실패 | 401 |
 | `FORBIDDEN` | 권한 없음 | 403 |
 
 ## 클라이언트 사용 예시
 
-### 대표 이미지 업로드
+### 메인 배너 이미지 업로드
 
 ```javascript
-const uploadRepresentativeImage = async (storeId, file) => {
+const uploadMainBannerImage = async (storeId, file) => {
   const formData = new FormData();
   formData.append('image', file);
   
-  const response = await fetch(`/api/admin/stores/${storeId}/representative-image`, {
+  const response = await fetch(`/api/admin/live/stores/${storeId}/main-banner-images`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${adminToken}`
@@ -228,29 +250,56 @@ const uploadRepresentativeImage = async (storeId, file) => {
 };
 ```
 
-### 갤러리 이미지 업로드
+### 메인 배너 이미지 삭제
 
 ```javascript
-const uploadGalleryImage = async (storeId, file) => {
-  const formData = new FormData();
-  formData.append('image', file);
-  
-  const response = await fetch(`/api/admin/stores/${storeId}/images`, {
-    method: 'POST',
+const deleteMainBannerImage = async (storeId, imageKey) => {
+  const encodedImageKey = encodeURIComponent(imageKey);
+  const response = await fetch(`/api/admin/live/stores/${storeId}/main-banner-images/${encodedImageKey}`, {
+    method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${adminToken}`
-    },
-    body: formData
+    }
   });
   
+  if (response.ok) {
+    console.log('메인 배너 이미지가 삭제되었습니다.');
+  }
+  
   return response.json();
+};
+```
+
+### 매장 정보 조회 (메인 배너 이미지 포함)
+
+```javascript
+const getStoreWithMainBannerImages = async (storeId) => {
+  const response = await fetch(`/api/admin/live/stores/${storeId}`, {
+    headers: {
+      'Authorization': `Bearer ${adminToken}`
+    }
+  });
+  
+  const storeData = await response.json();
+  
+  // 이미지 URL 생성
+  const S3_BASE_URL = 'https://lhj-spotline-assets-2026.s3.ap-northeast-2.amazonaws.com';
+  
+  const mainBannerImageUrls = storeData.data.mainBannerImages?.map(imageKey => 
+    `${S3_BASE_URL}/${imageKey}`
+  ) || [];
+  
+  return {
+    ...storeData.data,
+    mainBannerImageUrls
+  };
 };
 ```
 
 ### 진행률과 함께 업로드
 
 ```javascript
-const uploadWithProgress = (storeId, file, onProgress, isRepresentative = true) => {
+const uploadWithProgress = (storeId, file, onProgress) => {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     const formData = new FormData();
@@ -272,11 +321,7 @@ const uploadWithProgress = (storeId, file, onProgress, isRepresentative = true) 
       }
     });
     
-    const endpoint = isRepresentative 
-      ? `/api/admin/stores/${storeId}/representative-image`
-      : `/api/admin/stores/${storeId}/images`;
-      
-    xhr.open('POST', endpoint);
+    xhr.open('POST', `/api/admin/live/stores/${storeId}/main-banner-images`);
     xhr.setRequestHeader('Authorization', `Bearer ${adminToken}`);
     xhr.send(formData);
   });
@@ -285,23 +330,22 @@ const uploadWithProgress = (storeId, file, onProgress, isRepresentative = true) 
 
 ## 테스트 시나리오
 
-### 1. 대표 이미지 업로드 테스트
+### 1. 메인 배너 이미지 업로드 테스트
 ```bash
-curl -X POST http://localhost:4000/api/admin/stores/store123/representative-image \
+curl -X POST http://localhost:4000/api/admin/live/stores/store123/main-banner-images \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -F "image=@representative-image.jpg"
+  -F "image=@banner-image.jpg"
 ```
 
-### 2. 갤러리 이미지 업로드 테스트
+### 2. 메인 배너 이미지 삭제 테스트
 ```bash
-curl -X POST http://localhost:4000/api/admin/stores/store123/images \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -F "image=@gallery-image.jpg"
+curl -X DELETE "http://localhost:4000/api/admin/live/stores/store123/main-banner-images/stores%2Fmain-banner%2F2024%2F01%2F20%2Fuuid-filename.jpg" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
-### 3. 이미지 삭제 테스트
+### 3. 매장 정보 조회 테스트 (메인 배너 이미지 포함)
 ```bash
-curl -X DELETE "http://localhost:4000/api/admin/images/stores%2Frepresentative%2F2024%2F01%2F20%2Fuuid-filename.jpg" \
+curl -X GET http://localhost:4000/api/admin/live/stores/store123 \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 

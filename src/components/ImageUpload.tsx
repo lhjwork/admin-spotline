@@ -1,6 +1,13 @@
 import { useState, useRef, useCallback } from 'react'
 import { Upload, X, Image as ImageIcon, AlertCircle, Check, Trash2 } from 'lucide-react'
 
+// 전역 타입 선언
+declare global {
+  interface Window {
+    refreshStoreData?: (storeId: string) => Promise<void>;
+  }
+}
+
 interface UploadedImage {
   id: string
   url: string
@@ -15,11 +22,8 @@ interface ImageUploadProps {
   maxImages?: number
   maxSizeInMB?: number
   acceptedFormats?: string[]
-  representativeImageId?: string
-  onRepresentativeChange?: (imageId: string | null) => void
   initialImages?: UploadedImage[]
   storeId?: string // 매장 ID (업로드 시 필요)
-  isRepresentativeOnly?: boolean // 대표 이미지만 업로드할지 여부
 }
 
 const ACCEPTED_FORMATS = ['image/jpeg', 'image/png', 'image/webp']
@@ -30,11 +34,8 @@ export default function ImageUpload({
   maxImages = 5,
   maxSizeInMB = MAX_SIZE_MB,
   acceptedFormats = ACCEPTED_FORMATS,
-  representativeImageId,
-  onRepresentativeChange,
   initialImages = [],
-  storeId,
-  isRepresentativeOnly = false
+  storeId
 }: ImageUploadProps) {
   const [images, setImages] = useState<UploadedImage[]>(initialImages)
   const [isDragging, setIsDragging] = useState(false)
@@ -66,36 +67,18 @@ export default function ImageUpload({
         throw new Error('인증 토큰이 없습니다.')
       }
 
-      // storeId가 없으면 임시 업로드 (매장 생성 전)
+      // storeId가 없으면 에러 (매장 생성 전에는 업로드 불가)
       if (!storeId) {
-        console.warn('storeId가 없어서 임시 업로드를 사용합니다. 매장 생성 후 다시 업로드해주세요.');
-        // 임시로 기존 방식 사용 (호환성)
-        const { s3UploadAPI } = await import('../services/upload/s3UploadAPI');
-        const response = await s3UploadAPI.uploadImage(file, 'store');
-        return response.data.data.url;
+        throw new Error('매장을 먼저 저장한 후 이미지를 업로드할 수 있습니다.');
       }
 
-      // 대표 이미지 또는 첫 번째 이미지인 경우
-      const isRepresentative = isRepresentativeOnly || images.length === 0;
-      
-      if (isRepresentative) {
-        // 대표 이미지 업로드
-        const { s3UploadAPI } = await import('../services/upload/s3UploadAPI');
-        if (onProgress) {
-          return await s3UploadAPI.uploadRepresentativeImageWithProgress(storeId, file, onProgress);
-        } else {
-          const response = await s3UploadAPI.uploadRepresentativeImage(storeId, file);
-          return response.data.data.url;
-        }
+      // 메인 배너 이미지 업로드 (모든 이미지가 메인 배너로 처리됨)
+      const { s3UploadAPI } = await import('../services/upload/s3UploadAPI');
+      if (onProgress) {
+        return await s3UploadAPI.uploadMainBannerImageWithProgress(storeId, file, onProgress);
       } else {
-        // 갤러리 이미지 업로드
-        const { s3UploadAPI } = await import('../services/upload/s3UploadAPI');
-        if (onProgress) {
-          return await s3UploadAPI.uploadGalleryImageWithProgress(storeId, file, onProgress);
-        } else {
-          const response = await s3UploadAPI.uploadGalleryImage(storeId, file);
-          return response.data.data.url;
-        }
+        const response = await s3UploadAPI.uploadMainBannerImage(storeId, file);
+        return response.data.data.url;
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -149,16 +132,18 @@ export default function ImageUpload({
           isUploading: false
         }
 
-        const updatedImages = images.map(img => 
-          img.id === tempImage.id ? finalImage : img
-        )
-        
-        setImages(updatedImages)
-        onImagesChange(updatedImages)
-
-        // 첫 번째 이미지를 자동으로 대표 이미지로 설정
-        if (updatedImages.length === 1 && onRepresentativeChange) {
-          onRepresentativeChange(finalImage.id)
+        // 업로드 완료 후 매장 정보 새로고침 (메인 배너 이미지)
+        // 메인 배너 이미지 업로드 완료 - 부모 컴포넌트에서 매장 정보 새로고침하도록 알림
+        if (onImagesChange) {
+          // 임시 이미지 제거하고 새로고침 신호 전송
+          const filteredImages = images.filter(img => img.id !== tempImage.id)
+          setImages(filteredImages)
+          onImagesChange(filteredImages)
+          
+          // 매장 정보 새로고침을 위한 콜백 호출 (부모에서 구현)
+          if (window.refreshStoreData && storeId) {
+            window.refreshStoreData(storeId)
+          }
         }
 
       } catch (error) {
@@ -170,27 +155,16 @@ export default function ImageUpload({
         setUploadError(error instanceof Error ? error.message : '업로드에 실패했습니다.')
       }
     }
-  }, [images, maxImages, maxSizeInMB, acceptedFormats, onImagesChange, onRepresentativeChange])
+  }, [images, maxImages, maxSizeInMB, acceptedFormats, onImagesChange, storeId])
 
   // 이미지 삭제
   const handleRemoveImage = (imageId: string) => {
     const updatedImages = images.filter(img => img.id !== imageId)
     setImages(updatedImages)
     onImagesChange(updatedImages)
-
-    // 대표 이미지가 삭제된 경우
-    if (representativeImageId === imageId && onRepresentativeChange) {
-      const newRepresentative = updatedImages.length > 0 ? updatedImages[0]?.id || null : null
-      onRepresentativeChange(newRepresentative)
-    }
   }
 
-  // 대표 이미지 설정
-  const handleSetRepresentative = (imageId: string) => {
-    if (onRepresentativeChange) {
-      onRepresentativeChange(imageId)
-    }
-  }
+
 
   // 드래그 앤 드롭 이벤트
   const handleDragOver = (e: React.DragEvent) => {
@@ -236,13 +210,15 @@ export default function ImageUpload({
       {/* 업로드 영역 */}
       <div
         className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-          isDragging
+          !storeId
+            ? 'border-gray-200 bg-gray-50'
+            : isDragging
             ? 'border-purple-500 bg-purple-50'
             : 'border-gray-300 hover:border-purple-400 hover:bg-gray-50'
         }`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
+        onDragOver={storeId ? handleDragOver : undefined}
+        onDragLeave={storeId ? handleDragLeave : undefined}
+        onDrop={storeId ? handleDrop : undefined}
       >
         <input
           ref={fileInputRef}
@@ -251,30 +227,49 @@ export default function ImageUpload({
           accept={acceptedFormats.join(',')}
           onChange={handleFileSelect}
           className="hidden"
+          disabled={!storeId}
         />
         
         <div className="space-y-3">
           <div className="flex justify-center">
-            <Upload className="h-12 w-12 text-gray-400" />
+            <Upload className={`h-12 w-12 ${!storeId ? 'text-gray-300' : 'text-gray-400'}`} />
           </div>
           
           <div>
-            <p className="text-lg font-medium text-gray-900">
-              이미지를 드래그하거나 클릭하여 업로드
-            </p>
-            <p className="text-sm text-gray-500 mt-1">
-              {acceptedFormats.map(f => f.split('/')[1]?.toUpperCase() || '').join(', ')} 파일, 
-              최대 {maxSizeInMB}MB, {maxImages}개까지
-            </p>
+            {!storeId ? (
+              <>
+                <p className="text-lg font-medium text-gray-500">
+                  매장을 먼저 저장해주세요
+                </p>
+                <p className="text-sm text-gray-400 mt-1">
+                  매장 정보를 저장한 후 이미지를 업로드할 수 있습니다
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-lg font-medium text-gray-900">
+                  이미지를 드래그하거나 클릭하여 업로드
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {acceptedFormats.map(f => f.split('/')[1]?.toUpperCase() || '').join(', ')} 파일, 
+                  최대 {maxSizeInMB}MB, {maxImages}개까지
+                </p>
+              </>
+            )}
           </div>
           
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+            onClick={() => storeId && fileInputRef.current?.click()}
+            disabled={!storeId}
+            className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md ${
+              !storeId
+                ? 'text-gray-400 bg-gray-200 cursor-not-allowed'
+                : 'text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500'
+            }`}
           >
             <ImageIcon className="h-4 w-4 mr-2" />
-            파일 선택
+            {!storeId ? '매장 저장 후 이용 가능' : '파일 선택'}
           </button>
         </div>
       </div>
@@ -301,14 +296,10 @@ export default function ImageUpload({
           </h4>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {images.map((image) => (
+            {images.map((image, index) => (
               <div
                 key={image.id}
-                className={`relative border rounded-lg overflow-hidden ${
-                  representativeImageId === image.id
-                    ? 'border-purple-500 ring-2 ring-purple-200'
-                    : 'border-gray-200'
-                }`}
+                className="relative border rounded-lg overflow-hidden border-gray-200"
               >
                 {/* 이미지 미리보기 */}
                 <div className="aspect-w-16 aspect-h-9 bg-gray-100">
@@ -349,22 +340,6 @@ export default function ImageUpload({
                     
                     {!image.isUploading && (
                       <div className="flex items-center space-x-1 ml-2">
-                        {/* 대표 이미지 설정 버튼 */}
-                        {onRepresentativeChange && (
-                          <button
-                            type="button"
-                            onClick={() => handleSetRepresentative(image.id)}
-                            className={`p-1 rounded text-xs ${
-                              representativeImageId === image.id
-                                ? 'bg-purple-100 text-purple-700'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            }`}
-                            title={representativeImageId === image.id ? '대표 이미지' : '대표 이미지로 설정'}
-                          >
-                            <Check className="h-3 w-3" />
-                          </button>
-                        )}
-                        
                         {/* 삭제 버튼 */}
                         <button
                           type="button"
@@ -378,15 +353,12 @@ export default function ImageUpload({
                     )}
                   </div>
                   
-                  {/* 대표 이미지 표시 */}
-                  {representativeImageId === image.id && (
-                    <div className="mt-2">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                        <Check className="h-3 w-3 mr-1" />
-                        대표 이미지
-                      </span>
-                    </div>
-                  )}
+                  {/* 이미지 순서 표시 */}
+                  <div className="mt-2">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      메인 배너 #{index + 1}
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}
@@ -395,14 +367,27 @@ export default function ImageUpload({
       )}
 
       {/* 사용법 안내 */}
-      <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-        <div className="text-sm text-blue-800">
-          <p className="font-medium mb-1">💡 이미지 업로드 가이드</p>
+      <div className={`border rounded-md p-3 ${!storeId ? 'bg-yellow-50 border-yellow-200' : 'bg-blue-50 border-blue-200'}`}>
+        <div className={`text-sm ${!storeId ? 'text-yellow-800' : 'text-blue-800'}`}>
+          <p className="font-medium mb-1">
+            {!storeId ? '⚠️ 이미지 업로드 안내' : '💡 이미지 업로드 가이드'}
+          </p>
           <ul className="text-xs space-y-1 ml-4 list-disc">
-            <li>첫 번째 업로드된 이미지가 자동으로 대표 이미지로 설정됩니다</li>
-            <li>체크 버튼을 클릭하여 다른 이미지를 대표 이미지로 변경할 수 있습니다</li>
-            <li>최대 {maxImages}개의 이미지를 업로드할 수 있습니다</li>
-            <li>각 이미지는 최대 {maxSizeInMB}MB까지 지원됩니다</li>
+            {!storeId ? (
+              <>
+                <li>매장 정보를 먼저 저장한 후 이미지를 업로드할 수 있습니다</li>
+                <li>매장 저장 후 수정 모드에서 이미지를 추가해주세요</li>
+                <li>임시로 이미지 URL을 직접 입력하여 테스트할 수 있습니다</li>
+              </>
+            ) : (
+              <>
+                <li>메인 배너 이미지를 최대 {maxImages}개까지 업로드할 수 있습니다</li>
+                <li>이미���는 하나씩 업로드되며, 업로드 후 자동으로 목록이 새로고침됩니다</li>
+                <li>각 이미지는 최대 {maxSizeInMB}MB까지 지원됩니다</li>
+                <li>이미지 삭제는 아래 "현재 업로드된 이미지" 섹션에서 할 수 있습니다</li>
+                <li>모든 이미지는 메인 배너로 사용됩니다 (대표/갤러리 구분 없음)</li>
+              </>
+            )}
           </ul>
         </div>
       </div>

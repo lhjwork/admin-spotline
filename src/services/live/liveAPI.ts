@@ -1,8 +1,9 @@
+import { apiClient } from '../base/apiClient';
 import { ApiResponseType, BaseFilters } from '../base/types';
 
 // 🚀 라이브 시스템 관리 API
 export const liveAPI = {
-  // 라이브 매장 관리 - 임시 빈 데이터
+  // 라이브 매장 관리
   getLiveStores: (params: BaseFilters & {
     status?: string;
     search?: string;
@@ -15,64 +16,28 @@ export const liveAPI = {
       pending: number;
       suspended: number;
     };
-  }> => 
-    Promise.resolve({
-      data: {
-        success: true,
-        message: "라이브 매장 목록을 성공적으로 가져왔습니다.",
-        data: {
-          stores: [], // 빈 배열 - 아직 라이브 매장 없음
-          pagination: {
-            page: params.page || 1,
-            limit: params.limit || 20,
-            total: 0,
-            pages: 1
-          },
-          summary: {
-            total: 0,
-            active: 0,
-            pending: 0,
-            suspended: 0
-          }
-        }
-      }
-    } as any),
+  }> => {
+    const queryParams = {
+      page: params.page || 1,
+      limit: params.limit || 20,
+      ...(params.search && { search: params.search }),
+      ...(params.status && { status: params.status })
+    };
+    return apiClient.get("/api/admin/live/stores", { params: queryParams });
+  },
   
   getLiveStore: (storeId: string): ApiResponseType<any> => 
-    Promise.resolve({
-      data: {
-        success: false,
-        message: `라이브 매장을 찾을 수 없습니다. (ID: ${storeId})`
-      }
-    } as any),
+    apiClient.get(`/api/admin/live/stores/${storeId}`),
   
   approveStore: (storeId: string, approvalNote: string = ''): ApiResponseType<any> => 
-    Promise.resolve({
-      data: {
-        success: true,
-        message: "매장이 승인되었습니다.",
-        data: { storeId, approvalNote }
-      }
-    } as any),
+    apiClient.patch(`/api/admin/live/stores/${storeId}/approve`, { approvalNote }),
   
   suspendStore: (storeId: string, suspensionReason: string = ''): ApiResponseType<any> => 
-    Promise.resolve({
-      data: {
-        success: true,
-        message: "매장이 일시정지되었습니다.",
-        data: { storeId, suspensionReason }
-      }
-    } as any),
+    apiClient.patch(`/api/admin/live/stores/${storeId}/suspend`, { suspensionReason }),
   
-  // 라이브 추천 관리 - 임시 빈 데이터
+  // 라이브 추천 관리
   getLiveRecommendations: (): ApiResponseType<any[]> => 
-    Promise.resolve({
-      data: {
-        success: true,
-        message: "라이브 추천 목록을 성공적으로 가져왔습니다.",
-        data: []
-      }
-    } as any),
+    apiClient.get("/api/admin/live/recommendations"),
   
   createLiveRecommendation: (data: {
     fromStoreId: string;
@@ -80,32 +45,15 @@ export const liveAPI = {
     priority: number;
     isActive: boolean;
   }): ApiResponseType<any> => 
-    Promise.resolve({
-      data: {
-        success: true,
-        message: "라이브 추천이 생성되었습니다.",
-        data: { id: `live-rec-${Date.now()}`, ...data }
-      }
-    } as any),
+    apiClient.post("/api/admin/live/recommendations", data),
   
-  updateLiveRecommendation: (_recommendationId: string, data: any): ApiResponseType<any> => 
-    Promise.resolve({
-      data: {
-        success: true,
-        message: "라이브 추천이 수정되었습니다.",
-        data: { id: `live-rec-${Date.now()}`, ...data }
-      }
-    } as any),
+  updateLiveRecommendation: (recommendationId: string, data: any): ApiResponseType<any> => 
+    apiClient.put(`/api/admin/live/recommendations/${recommendationId}`, data),
   
-  deleteLiveRecommendation: (_recommendationId: string): ApiResponseType<void> => 
-    Promise.resolve({
-      data: {
-        success: true,
-        message: "라이브 추천이 삭제되었습니다."
-      }
-    } as any),
+  deleteLiveRecommendation: (recommendationId: string): ApiResponseType<void> => 
+    apiClient.delete(`/api/admin/live/recommendations/${recommendationId}`),
   
-  // 라이브 분석 - 임시 목 데이터
+  // 라이브 분석
   getLiveAnalytics: (): ApiResponseType<{
     overview: {
       totalStores: number;
@@ -125,59 +73,19 @@ export const liveAPI = {
       conversionRate: number;
     };
   }> => 
-    Promise.resolve({
-      data: {
-        success: true,
-        message: "라이브 분석 데이터를 성공적으로 가져왔습니다.",
-        data: {
-          overview: {
-            totalStores: 0,
-            activeStores: 0,
-            pendingStores: 0,
-            totalViews: 0,
-            totalQRScans: 0
-          },
-          trends: {
-            dailyViews: Array(7).fill(0),
-            dailyScans: Array(7).fill(0),
-            topCategories: []
-          },
-          performance: {
-            averageViewsPerStore: 0,
-            averageScansPerStore: 0,
-            conversionRate: 0
-          }
-        }
-      }
-    } as any),
+    apiClient.get("/api/admin/live/analytics"),
   
   getStoreAnalytics: (storeId: string): ApiResponseType<any> => 
-    Promise.resolve({
-      data: {
-        success: false,
-        message: `라이브 매장 분석 데이터를 찾을 수 없습니다. (ID: ${storeId})`
-      }
-    } as any),
+    apiClient.get(`/api/admin/live/stores/${storeId}/analytics`),
   
-  // 라이브 설정 - 임시 목 데이터
+  // 라이브 설정
   getLiveSettings: (): ApiResponseType<{
     isEnabled: boolean;
     requireApproval: boolean;
     maxStoresPerOwner: number;
     analyticsRetentionDays: number;
   }> => 
-    Promise.resolve({
-      data: {
-        success: true,
-        message: "라이브 시스템 설정을 성공적으로 가져왔습니다.",
-        data: {
-          isEnabled: false, // 아직 라이브 시스템 비활성화
-          requireApproval: true,
-          maxStoresPerOwner: 5,
-          analyticsRetentionDays: 90
-        }
-      }
-    } as any),
+    apiClient.get("/api/admin/live/settings"),
   
   updateLiveSettings: (settings: {
     isEnabled?: boolean;
@@ -185,11 +93,5 @@ export const liveAPI = {
     maxStoresPerOwner?: number;
     analyticsRetentionDays?: number;
   }): ApiResponseType<any> => 
-    Promise.resolve({
-      data: {
-        success: true,
-        message: "라이브 시스템 설정이 업데이트되었습니다.",
-        data: settings
-      }
-    } as any)
+    apiClient.put("/api/admin/live/settings", settings)
 };

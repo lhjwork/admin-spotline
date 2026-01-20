@@ -74,6 +74,7 @@ export default function DaumAddressEmbed({
   const [address, setAddress] = useState<string>(initialAddress);
   const [detailAddress, setDetailAddress] = useState<string>(initialDetailAddress);
   const [coordinates, setCoordinates] = useState<Coordinates | null>(initialCoordinates);
+  const [addressData, setAddressData] = useState<AddressData | null>(null); // 주소 데이터 상태 추가
   const [showModal, setShowModal] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [showMap, setShowMap] = useState<boolean>(false);
@@ -96,17 +97,7 @@ export default function DaumAddressEmbed({
     setDetailAddress(value);
     
     // 기본 주소가 있을 때만 부모 컴포넌트에 전달
-    if (address) {
-      const addressData: AddressData = {
-        zonecode: '',
-        roadAddress: address,
-        jibunAddress: '',
-        buildingName: '',
-        sido: '',
-        sigungu: '',
-        bname: ''
-      };
-      
+    if (address && addressData) {
       const fullAddress = value ? `${address} ${value}` : address;
       
       onAddressSelect({
@@ -114,7 +105,7 @@ export default function DaumAddressEmbed({
         detailAddress: value,
         fullAddress,
         coordinates,
-        addressData
+        addressData // 기존 주소 데이터 유지
       });
     }
   };
@@ -349,18 +340,8 @@ export default function DaumAddressEmbed({
   // 위치 편집 완료
   const finishLocationEdit = () => {
     setIsEditingLocation(false);
-    if (coordinates) {
+    if (coordinates && addressData) {
       // 부모 컴포넌트에 업데이트된 좌표 전달
-      const addressData: AddressData = {
-        zonecode: '',
-        roadAddress: address,
-        jibunAddress: '',
-        buildingName: '',
-        sido: '',
-        sigungu: '',
-        bname: ''
-      };
-      
       const fullAddress = detailAddress ? `${address} ${detailAddress}` : address;
       
       onAddressSelect({
@@ -368,7 +349,7 @@ export default function DaumAddressEmbed({
         detailAddress,
         fullAddress,
         coordinates,
-        addressData
+        addressData // 기존 주소 데이터 유지
       });
       
       // 편집 모드가 아닌 일반 지도로 다시 표시
@@ -406,7 +387,7 @@ export default function DaumAddressEmbed({
             setLoading(true);
             
             const fullAddress = data.roadAddress || data.jibunAddress;
-            const addressData: AddressData = {
+            const newAddressData: AddressData = {
               zonecode: data.zonecode,
               roadAddress: data.roadAddress,
               jibunAddress: data.jibunAddress,
@@ -418,6 +399,7 @@ export default function DaumAddressEmbed({
 
             setAddress(fullAddress);
             setDetailAddress(''); // 새 주소 선택 시 상세 주소 초기화
+            setAddressData(newAddressData); // 주소 데이터 저장
 
             // 좌표 변환 시도
             const coords = await getCoordinatesFromAddress(fullAddress);
@@ -431,7 +413,7 @@ export default function DaumAddressEmbed({
               detailAddress: '',
               fullAddress: fullAddress,
               coordinates: coords,
-              addressData: addressData
+              addressData: newAddressData
             };
             
             onAddressSelect(finalResult);

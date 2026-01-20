@@ -554,10 +554,22 @@ export default function DemoSystem() {
   )
 
   const handleSubmitStore = (data) => {
+    // 좌표를 GeoJSON 형식으로 변환
+    const transformedData = {
+      ...data,
+      location: {
+        ...data.location,
+        coordinates: {
+          type: 'Point',
+          coordinates: [data.location.coordinates[0], data.location.coordinates[1]]
+        }
+      }
+    }
+    
     if (editingStore) {
-      updateStoreMutation.mutate({ id: editingStore.id, data })
+      updateStoreMutation.mutate({ id: editingStore.id, data: transformedData })
     } else {
-      createStoreMutation.mutate(data)
+      createStoreMutation.mutate(transformedData)
     }
   }
 

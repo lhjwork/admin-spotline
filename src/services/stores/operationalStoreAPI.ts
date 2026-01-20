@@ -1,46 +1,28 @@
-import { storeAPI } from './storeAPI';
+import { apiClient } from '../base/apiClient';
 import { ApiResponseType, BaseFilters } from '../base/types';
 import type { Store } from '../../types';
 
-// 🏪 운영 매장 API (real_ 접두사 필터링)
+// 🏪 운영 매장 API (Live 시스템 사용)
 export const operationalStoreAPI = {
   getStores: (params: BaseFilters & { 
     area?: string; 
     active?: boolean;
     status?: string;
-  } = {}): ApiResponseType<{ stores: Store[]; pagination: any }> => 
-    storeAPI.getStores({ ...params, limit: 1000 }).then(response => {
-      const allStores = response.data.data?.stores || [];
-      const operationalStores = allStores.filter(store => 
-        store.qrCode?.id?.startsWith('real_')
-      );
-      
-      // 페이지네이션 재계산
-      const page = params.page || 1;
-      const limit = params.limit || 20;
-      const startIndex = (page - 1) * limit;
-      const endIndex = startIndex + limit;
-      const paginatedStores = operationalStores.slice(startIndex, endIndex);
-      
-      return {
-        ...response,
-        data: {
-          ...response.data,
-          data: {
-            stores: paginatedStores,
-            pagination: {
-              page,
-              limit,
-              count: operationalStores.length,
-              total: Math.ceil(operationalStores.length / limit)
-            }
-          }
-        }
-      };
-    }),
+  } = {}): ApiResponseType<{ stores: Store[]; pagination: any }> => {
+    const queryParams = {
+      page: params.page || 1,
+      limit: params.limit || 20,
+      ...(params.search && { search: params.search }),
+      ...(params.category && { category: params.category }),
+      ...(params.area && { area: params.area }),
+      ...(params.status && { status: params.status }),
+      ...(params.active !== undefined && { active: params.active })
+    };
+    return apiClient.get("/api/admin/live/stores", { params: queryParams });
+  },
   
   getStore: (id: string): ApiResponseType<Store> => 
-    storeAPI.getStore(id),
+    apiClient.get(`/api/admin/live/stores/${id}`),
   
   createStore: (data: Omit<Store, "_id" | "createdAt" | "updatedAt">): ApiResponseType<Store> => {
     // QR 코드에 real_ 접두사 자동 추가
@@ -52,15 +34,15 @@ export const operationalStoreAPI = {
         isActive: data.qrCode?.isActive !== false
       }
     };
-    return storeAPI.createStore(storeData);
+    return apiClient.post("/api/admin/live/stores", storeData);
   },
   
   updateStore: (id: string, data: Partial<Store>): ApiResponseType<Store> => 
-    storeAPI.updateStore(id, data),
+    apiClient.put(`/api/admin/live/stores/${id}`, data),
   
   deleteStore: (id: string): ApiResponseType<void> => 
-    storeAPI.deleteStore(id),
+    apiClient.delete(`/api/admin/live/stores/${id}`),
   
   toggleStatus: (id: string, isActive: boolean): ApiResponseType<Store> => 
-    storeAPI.toggleStatus(id, isActive)
+    apiClient.patch(`/api/admin/live/stores/${id}/toggle`, { isActive })
 };
