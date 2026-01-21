@@ -16,6 +16,8 @@ import {
 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import DaumAddressEmbed from '../components/DaumAddressEmbed'
+import ImageUpload from '../components/ImageUpload'
+import ExistingImageManager from '../components/ExistingImageManager'
 
 interface Category {
   value: string;
@@ -46,7 +48,7 @@ interface StoreFormData {
     isActive: boolean;
   };
   description: string;
-  images: string[];
+  mainBannerImages: string[]; // 메인 배너 이미지 배열 (최대 5개)
   contact: {
     phone: string;
     website: string;
@@ -65,6 +67,7 @@ interface StoreFormProps {
 }
 
 function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
+  const queryClient = useQueryClient()
   const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<StoreFormData>({
     defaultValues: store ? {
       name: store.name || '',
@@ -81,7 +84,7 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
         isActive: store.qrCode?.isActive !== false
       },
       description: store.description || '',
-      images: store.images || [''],
+      mainBannerImages: store.mainBannerImages || [],
       contact: {
         phone: store.contact?.phone || '',
         website: store.contact?.website || '',
@@ -103,7 +106,7 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
         isActive: true
       },
       description: '',
-      images: [''],
+      mainBannerImages: [],
       contact: {
         phone: '',
         website: '',
@@ -114,6 +117,35 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
       isActive: true
     }
   })
+
+  // 이미지 업로드 상태 관리
+  const [uploadedImages, setUploadedImages] = useState<any[]>([])
+  const [representativeImageId, setRepresentativeImageId] = useState<string | null>(null)
+
+  // 이미지 삭제 후 매장 데이터 새로고침
+  const handleImageDeleted = () => {
+    if (store?._id) {
+      queryClient.invalidateQueries(['operational-store', store._id])
+    }
+  }
+
+  // 매장 정보 새로고침 함수
+  const refreshStoreData = async () => {
+    if (store?._id) {
+      await queryClient.invalidateQueries(['operational-store', store._id])
+      await queryClient.refetchQueries(['operational-store', store._id])
+    }
+  }
+
+  // 전역 함수로 등록 (ImageUpload에서 사용)
+  useEffect(() => {
+    if (store?._id) {
+      window.refreshStoreData = refreshStoreData
+    }
+    return () => {
+      delete window.refreshStoreData
+    }
+  }, [store?._id])
 
   useEffect(() => {
     if (store) {
@@ -132,7 +164,7 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
           isActive: store.qrCode?.isActive !== false
         },
         description: store.description || '',
-        images: store.images || [''],
+        mainBannerImages: store.mainBannerImages || [],
         contact: {
           phone: store.contact?.phone || '',
           website: store.contact?.website || '',
@@ -143,8 +175,36 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
         isActive: store.isActive !== false
       };
       reset(formData);
+
+      // 기존 메인 배너 이미지 데이터를 업로드 컴포넌트 형식으로 변환
+      if (store.mainBannerImages && store.mainBannerImages.length > 0) {
+        const existingImages = store.mainBannerImages.map((imageKey, index) => ({
+          id: `existing-${index}`,
+          url: `https://lhj-spotline-assets-2026.s3.ap-northeast-2.amazonaws.com/${imageKey}`,
+          filename: `main-banner-${index + 1}.jpg`,
+          size: 0,
+          isUploading: false
+        }))
+        setUploadedImages(existingImages)
+        setRepresentativeImageId(existingImages[0]?.id || null)
+      }
     }
   }, [store, reset])
+
+  // 이미지 업로드 변경 처리
+  const handleImagesChange = (images: any[]) => {
+    setUploadedImages(images)
+    
+    // 폼 데이터 업데이트 - 모든 이미지를 mainBannerImages 배열로 설정
+    const imageUrls = images.filter(img => !img.isUploading).map(img => img.url)
+    setValue('mainBannerImages', imageUrls)
+  }
+
+  // 대표 이미지 변경 처리 (호환성을 위해 유지하지만 실제로는 사용하지 않음)
+  const handleRepresentativeChange = (imageId: string | null) => {
+    setRepresentativeImageId(imageId)
+    // 메인 배너 이미지 시스템에서는 대표 이미지 개념이 없으므로 특별한 처리 없음
+  }
 
   const onFormSubmit = (data: StoreFormData) => {
     // QR 코드 ID 자동 생성 (real_ 접두사)
@@ -152,7 +212,20 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
       data.qrCode.id = `real_${Date.now().toString().slice(-8)}`
     }
     
-    onSubmit(data)
+    // 좌표를 GeoJSON 형식으로 변환
+    const transformedData = {
+      ...data,
+      location: {
+        ...data.location,
+        coordinates: {
+          type: 'Point',
+          coordinates: [data.location.coordinates[0], data.location.coordinates[1]]
+        }
+      }
+      // mainBannerImages는 이미 배열 형태이므로 그대로 전달
+    }
+    
+    onSubmit(transformedData as any)
   }
 
   return (
@@ -335,17 +408,41 @@ function StoreForm({ store, onSubmit, onCancel, loading }: StoreFormProps) {
             )}
           </div>
 
+          {/* 이미지 업로드 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              대표 이미지 URL
+              메인 배너 이미지 *
             </label>
-            <input
-              {...register('images.0')}
-              type="url"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-              placeholder="https://example.com/image.jpg"
+            <ImageUpload
+              onImagesChange={handleImagesChange}
+              maxImages={5}
+              maxSizeInMB={5}
+              acceptedFormats={['image/jpeg', 'image/png', 'image/webp']}
+              initialImages={uploadedImages}
+              storeId={store?._id} // 기존 매장 수정 시에만 storeId 전달
             />
+            <p className="mt-1 text-xs text-gray-500">
+              {store?._id 
+                ? "메인 배너 이미지를 최대 5개까지 업로드할 수 있습니다. 모든 이미지는 메인 배너로 사용됩니다."
+                : "매장을 먼저 저장한 후 이미지를 업로드할 수 있습니다. 임시로 URL을 입력하거나 매장 저장 후 이미지를 업로드하세요."
+              }
+            </p>
           </div>
+
+          {/* 기존 이미지 관리 (수정 모드일 때만 표시) */}
+          {store?._id && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                현재 업로드된 메인 배너 이미지
+              </label>
+              <ExistingImageManager
+                storeId={store._id}
+                mainBannerImages={store.mainBannerImages || []}
+                onImageDeleted={handleImageDeleted}
+                onRefreshStore={refreshStoreData}
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">

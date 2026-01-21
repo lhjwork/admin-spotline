@@ -79,6 +79,9 @@ export interface Store {
   businessHours?: Record<string, { open: string; close: string }>;
   description?: string;
   tags?: string[];
+  // 새로운 메인 배너 이미지 시스템
+  mainBannerImages?: string[]; // S3 키 배열 (최대 5개)
+  // 호환성을 위한 기존 필드 (deprecated)
   images?: string[];
   qrCode: {
     id: string;

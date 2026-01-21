@@ -1,20 +1,28 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { liveAPI } from '../services/api'
 import { 
   Store, 
   TrendingUp,
-  Users,
   Eye,
   CheckCircle,
-  XCircle,
   Clock,
-  AlertTriangle,
   BarChart3,
   Settings,
-  Search,
-  Filter
+  Search
 } from 'lucide-react'
+
+interface LiveStore {
+  storeId: string;
+  name: string;
+  category: string;
+  status: string;
+  owner: string;
+  createdAt: string;
+  totalViews: number;
+  totalScans: number;
+  conversionRate: number;
+}
 
 interface StatusOption {
   value: string;
@@ -141,7 +149,7 @@ function StoreApprovalModal({ store, onApprove, onSuspend, onClose, loading }: S
 export default function LiveSystem() {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState('stores')
-  const [selectedStore, setSelectedStore] = useState(null)
+  const [selectedStore, setSelectedStore] = useState<LiveStore | null>(null)
   const [filters, setFilters] = useState({
     page: 1,
     limit: 20,
@@ -161,7 +169,7 @@ export default function LiveSystem() {
   )
 
   // 라이브 분석 데이터
-  const { data: liveAnalytics, isLoading: analyticsLoading } = useQuery(
+  const { data: liveAnalytics } = useQuery(
     'live-analytics',
     () => liveAPI.getLiveAnalytics(),
     {
@@ -181,7 +189,7 @@ export default function LiveSystem() {
 
   // 매장 승인 뮤테이션
   const approveMutation = useMutation(
-    ({ storeId, note }) => liveAPI.approveStore(storeId, note),
+    ({ storeId, note }: { storeId: string; note: string }) => liveAPI.approveStore(storeId, note),
     {
       onSuccess: () => {
         queryClient.invalidateQueries('live-stores')
@@ -189,7 +197,7 @@ export default function LiveSystem() {
         setSelectedStore(null)
         alert('매장이 승인되었습니다.')
       },
-      onError: (error) => {
+      onError: (error: any) => {
         alert('매장 승인에 실패했습니다: ' + error.message)
       }
     }
@@ -197,7 +205,7 @@ export default function LiveSystem() {
 
   // 매장 정지 뮤테이션
   const suspendMutation = useMutation(
-    ({ storeId, reason }) => liveAPI.suspendStore(storeId, reason),
+    ({ storeId, reason }: { storeId: string; reason: string }) => liveAPI.suspendStore(storeId, reason),
     {
       onSuccess: () => {
         queryClient.invalidateQueries('live-stores')
@@ -205,22 +213,26 @@ export default function LiveSystem() {
         setSelectedStore(null)
         alert('매장이 정지되었습니다.')
       },
-      onError: (error) => {
+      onError: (error: any) => {
         alert('매장 정지에 실패했습니다: ' + error.message)
       }
     }
   )
 
-  const handleApprove = (note) => {
-    approveMutation.mutate({ storeId: selectedStore.storeId, note })
+  const handleApprove = (note: string) => {
+    if (selectedStore) {
+      approveMutation.mutate({ storeId: selectedStore.storeId, note })
+    }
   }
 
-  const handleSuspend = (reason) => {
-    suspendMutation.mutate({ storeId: selectedStore.storeId, reason })
+  const handleSuspend = (reason: string) => {
+    if (selectedStore) {
+      suspendMutation.mutate({ storeId: selectedStore.storeId, reason })
+    }
   }
 
-  const getStatusBadge = (status) => {
-    const statusConfig = {
+  const getStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { color: string; label: string }> = {
       active: { color: 'bg-green-100 text-green-800', label: '활성' },
       pending: { color: 'bg-yellow-100 text-yellow-800', label: '승인 대기' },
       suspended: { color: 'bg-red-100 text-red-800', label: '정지' }
@@ -235,7 +247,7 @@ export default function LiveSystem() {
     )
   }
 
-  const formatNumber = (num) => {
+  const formatNumber = (num: number) => {
     return new Intl.NumberFormat('ko-KR').format(num || 0)
   }
 
