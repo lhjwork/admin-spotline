@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "react-query";
+import { useNavigate } from "react-router-dom";
 import { storeAPI } from "../services/api";
-import { Search, Filter, MoreVertical, Eye, Edit, Trash2, ToggleLeft, ToggleRight, Plus, CheckCircle } from "lucide-react";
+import { Search, Filter, MoreVertical, Eye, Edit, Trash2, ToggleLeft, ToggleRight, Plus, CheckCircle, Settings } from "lucide-react";
 import StoreFormModal from "../components/StoreFormModal";
 import { formatDateKST } from "../utils/dateUtils";
 
@@ -34,6 +35,7 @@ export default function Stores() {
   const [showModal, setShowModal] = useState(false);
   const [selectedStore, setSelectedStore] = useState(null);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data, isLoading, error } = useQuery(["stores", filters], () => storeAPI.getStores(filters), {
     select: (response) => response.data,
@@ -107,6 +109,10 @@ export default function Stores() {
     if (confirm(`${store.name} 매장을 완전히 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) {
       deleteStoreMutation.mutate(store._id);
     }
+  };
+
+  const handleRecommendationSettings = (store) => {
+    navigate(`/recommendations/${store._id}`);
   };
 
   if (isLoading) {
@@ -216,6 +222,7 @@ export default function Stores() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">매장 정보</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">카테고리</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">QR 코드</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">추천 개수</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">월간 스캔</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">등록일</th>
@@ -235,6 +242,15 @@ export default function Stores() {
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{store.category}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{store.qrCode.id}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-gray-900">{store.recommendationCount || 0}개</span>
+                      <button onClick={() => handleRecommendationSettings(store)} className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100">
+                        <Settings className="h-3 w-3 mr-1" />
+                        추천 설정
+                      </button>
+                    </div>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{store.stats?.monthlyScans || 0}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${store.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
