@@ -25,12 +25,22 @@ interface ImageUploadProps {
   initialImages?: UploadedImage[];
   storeId?: string; // 매장 ID (업로드 시 필요)
   onRefreshStore?: () => void; // 매장 정보 새로고침 콜백
+  onImageUploaded?: (imageUrl: string) => void; // 이미지 업로드 완료 콜백
 }
 
 const ACCEPTED_FORMATS = ["image/jpeg", "image/png", "image/webp"];
 const MAX_SIZE_MB = 5;
 
-export default function ImageUpload({ onImagesChange, maxImages = 5, maxSizeInMB = MAX_SIZE_MB, acceptedFormats = ACCEPTED_FORMATS, initialImages = [], storeId, onRefreshStore }: ImageUploadProps) {
+export default function ImageUpload({
+  onImagesChange,
+  maxImages = 5,
+  maxSizeInMB = MAX_SIZE_MB,
+  acceptedFormats = ACCEPTED_FORMATS,
+  initialImages = [],
+  storeId,
+  onRefreshStore,
+  onImageUploaded,
+}: ImageUploadProps) {
   const [images, setImages] = useState<UploadedImage[]>(initialImages);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -134,6 +144,11 @@ export default function ImageUpload({ onImagesChange, maxImages = 5, maxSizeInMB
             // 매장 정보 새로고침을 위한 콜백 호출 (부모에서 구현)
             if (onRefreshStore) {
               onRefreshStore();
+            }
+
+            // 낙관적 업데이트를 위한 콜백 호출
+            if (onImageUploaded) {
+              onImageUploaded(uploadedUrl);
             }
           }
         } catch (error) {

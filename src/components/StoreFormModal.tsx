@@ -131,6 +131,16 @@ export default function StoreFormModal({ isOpen, onClose, onSubmit, store = null
     setUploadedImages(images);
   };
 
+  // 새 이미지가 업로드되었을 때 currentStore에 즉시 반영
+  const handleImageUploaded = (newImageUrl) => {
+    if (currentStore) {
+      setCurrentStore((prev) => ({
+        ...prev,
+        mainBannerImages: [...(prev.mainBannerImages || []), newImageUrl],
+      }));
+    }
+  };
+
   const handleImageDeleted = () => {
     setRefreshTrigger((prev) => prev + 1);
     // 부모 컴포넌트의 쿼리 무효화
@@ -353,7 +363,14 @@ export default function StoreFormModal({ isOpen, onClose, onSubmit, store = null
               {/* 새 이미지 업로드 */}
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-3">{isEdit ? "새 이미지 추가" : "이미지 업로드"}</h4>
-                <ImageUpload onImagesChange={handleImagesChange} maxImages={5} storeId={isEdit ? currentStore?._id : null} initialImages={uploadedImages} onRefreshStore={handleRefreshStore} />
+                <ImageUpload
+                  onImagesChange={handleImagesChange}
+                  maxImages={5}
+                  storeId={isEdit ? currentStore?._id : null}
+                  initialImages={uploadedImages}
+                  onRefreshStore={handleRefreshStore}
+                  onImageUploaded={handleImageUploaded}
+                />
               </div>
             </div>
           </div>
