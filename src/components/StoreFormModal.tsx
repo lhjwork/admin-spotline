@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { X, Save, Plus } from "lucide-react";
 import AddressSearchWithMap from "./AddressSearchWithMap";
+import ImageUpload from "./ImageUpload";
+import ExistingImageManager from "./ExistingImageManager";
 
 const CATEGORIES = [
   { value: "cafe", label: "카페" },
@@ -40,6 +42,8 @@ export default function StoreFormModal({ isOpen, onClose, onSubmit, store = null
   const [tags, setTags] = useState([]);
   const [newTag, setNewTag] = useState("");
   const [businessHours, setBusinessHours] = useState(BUSINESS_HOURS_TEMPLATE);
+  const [uploadedImages, setUploadedImages] = useState([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const {
     register,
@@ -77,12 +81,14 @@ export default function StoreFormModal({ isOpen, onClose, onSubmit, store = null
 
         setTags(store.tags || []);
         setBusinessHours(store.businessHours || BUSINESS_HOURS_TEMPLATE);
+        setUploadedImages([]);
       } else {
         // 생성 모드: 초기화
         reset();
         setAddressData(null);
         setTags([]);
         setBusinessHours(BUSINESS_HOURS_TEMPLATE);
+        setUploadedImages([]);
       }
     }
   }, [isOpen, store, reset]);
@@ -109,6 +115,19 @@ export default function StoreFormModal({ isOpen, onClose, onSubmit, store = null
 
   const handleRemoveTag = (tagToRemove) => {
     setTags(tags.filter((tag) => tag !== tagToRemove));
+  };
+
+  const handleImagesChange = (images) => {
+    setUploadedImages(images);
+  };
+
+  const handleImageDeleted = () => {
+    setRefreshTrigger((prev) => prev + 1);
+  };
+
+  const handleRefreshStore = async () => {
+    // 매장 정보 새로고침 로직 (부모 컴포넌트에서 처리)
+    setRefreshTrigger((prev) => prev + 1);
   };
 
   const handleBusinessHourChange = (day, field, value) => {
@@ -281,6 +300,27 @@ export default function StoreFormModal({ isOpen, onClose, onSubmit, store = null
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="매장에 대한 설명을 입력하세요"
             />
+          </div>
+
+          {/* 이미지 관리 */}
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">이미지 관리</h3>
+
+              {/* 기존 이미지 관리 (수정 모드일 때만) */}
+              {isEdit && store?._id && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">현재 업로드된 이미지</h4>
+                  <ExistingImageManager storeId={store._id} mainBannerImages={store.mainBannerImages || []} onImageDeleted={handleImageDeleted} onRefreshStore={handleRefreshStore} />
+                </div>
+              )}
+
+              {/* 새 이미지 업로드 */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 mb-3">{isEdit ? "새 이미지 추가" : "이미지 업로드"}</h4>
+                <ImageUpload onImagesChange={handleImagesChange} maxImages={5} storeId={isEdit ? store?._id : null} initialImages={uploadedImages} />
+              </div>
+            </div>
           </div>
 
           {/* 버튼 */}
