@@ -37,7 +37,7 @@ const DAYS = [
   { key: "sunday", label: "일요일" },
 ];
 
-export default function StoreFormModal({ isOpen, onClose, onSubmit, store = null, loading = false }) {
+export default function StoreFormModal({ isOpen, onClose, onSubmit, store = null, loading = false, onRefreshStore }) {
   const [addressData, setAddressData] = useState(null);
   const [tags, setTags] = useState([]);
   const [newTag, setNewTag] = useState("");
@@ -93,6 +93,13 @@ export default function StoreFormModal({ isOpen, onClose, onSubmit, store = null
     }
   }, [isOpen, store, reset]);
 
+  // refreshTrigger가 변경될 때마다 부모 컴포넌트의 쿼리 무효화
+  useEffect(() => {
+    if (refreshTrigger > 0 && onRefreshStore) {
+      onRefreshStore();
+    }
+  }, [refreshTrigger, onRefreshStore]);
+
   const handleAddressSelect = (data) => {
     setAddressData(data);
 
@@ -123,11 +130,18 @@ export default function StoreFormModal({ isOpen, onClose, onSubmit, store = null
 
   const handleImageDeleted = () => {
     setRefreshTrigger((prev) => prev + 1);
+    // 부모 컴포넌트의 쿼리 무효화
+    if (onRefreshStore) {
+      onRefreshStore();
+    }
   };
 
   const handleRefreshStore = async () => {
     // 매장 정보 새로고침 로직 (부모 컴포넌트에서 처리)
     setRefreshTrigger((prev) => prev + 1);
+    if (onRefreshStore) {
+      onRefreshStore();
+    }
   };
 
   const handleBusinessHourChange = (day, field, value) => {
@@ -318,7 +332,7 @@ export default function StoreFormModal({ isOpen, onClose, onSubmit, store = null
               {/* 새 이미지 업로드 */}
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-3">{isEdit ? "새 이미지 추가" : "이미지 업로드"}</h4>
-                <ImageUpload onImagesChange={handleImagesChange} maxImages={5} storeId={isEdit ? store?._id : null} initialImages={uploadedImages} />
+                <ImageUpload onImagesChange={handleImagesChange} maxImages={5} storeId={isEdit ? store?._id : null} initialImages={uploadedImages} onRefreshStore={handleRefreshStore} />
               </div>
             </div>
           </div>

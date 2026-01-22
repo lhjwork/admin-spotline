@@ -354,6 +354,7 @@ export default function Stores() {
         onSubmit={handleSubmitStore}
         store={selectedStore}
         loading={createMutation.isLoading || updateMutation.isLoading}
+        onRefreshStore={() => queryClient.invalidateQueries(["stores"])}
       />
     </div>
   );
