@@ -38,7 +38,7 @@ export default function Stores() {
   const navigate = useNavigate();
 
   const { data, isLoading, error } = useQuery(["stores", filters], () => storeAPI.getStores(filters), {
-    select: (response) => response.data,
+    select: (response) => response.data.data,
     keepPreviousData: true,
   });
 
