@@ -44,6 +44,7 @@ export default function StoreFormModal({ isOpen, onClose, onSubmit, store = null
   const [businessHours, setBusinessHours] = useState(BUSINESS_HOURS_TEMPLATE);
   const [uploadedImages, setUploadedImages] = useState([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [currentStore, setCurrentStore] = useState(store); // 현재 매장 데이터를 로컬 상태로 관리
 
   const {
     register,
@@ -60,6 +61,7 @@ export default function StoreFormModal({ isOpen, onClose, onSubmit, store = null
     if (isOpen) {
       if (store) {
         // 수정 모드: 기존 데이터 로드
+        setCurrentStore(store); // 현재 매장 데이터 설정
         reset({
           name: store.name || "",
           category: store.category || "",
@@ -84,6 +86,7 @@ export default function StoreFormModal({ isOpen, onClose, onSubmit, store = null
         setUploadedImages([]);
       } else {
         // 생성 모드: 초기화
+        setCurrentStore(null);
         reset();
         setAddressData(null);
         setTags([]);
@@ -134,6 +137,8 @@ export default function StoreFormModal({ isOpen, onClose, onSubmit, store = null
     if (onRefreshStore) {
       onRefreshStore();
     }
+    // 현재 매장 데이터 새로고침
+    refreshCurrentStoreData();
   };
 
   const handleRefreshStore = async () => {
@@ -141,6 +146,22 @@ export default function StoreFormModal({ isOpen, onClose, onSubmit, store = null
     setRefreshTrigger((prev) => prev + 1);
     if (onRefreshStore) {
       onRefreshStore();
+    }
+    // 현재 매장 데이터 새로고침
+    refreshCurrentStoreData();
+  };
+
+  // 현재 매장 데이터를 API에서 다시 가져오는 함수
+  const refreshCurrentStoreData = async () => {
+    if (currentStore?._id) {
+      try {
+        const { storeAPI } = await import("../services/stores/storeAPI");
+        const response = await storeAPI.getStore(currentStore._id);
+        const updatedStore = response.data.data; // API 응답 구조에 맞게 수정
+        setCurrentStore(updatedStore);
+      } catch (error) {
+        console.error("Failed to refresh store data:", error);
+      }
     }
   };
 
@@ -322,17 +343,17 @@ export default function StoreFormModal({ isOpen, onClose, onSubmit, store = null
               <h3 className="text-lg font-medium text-gray-900 mb-4">이미지 관리</h3>
 
               {/* 기존 이미지 관리 (수정 모드일 때만) */}
-              {isEdit && store?._id && (
+              {isEdit && currentStore?._id && (
                 <div className="mb-6">
                   <h4 className="text-sm font-medium text-gray-700 mb-3">현재 업로드된 이미지</h4>
-                  <ExistingImageManager storeId={store._id} mainBannerImages={store.mainBannerImages || []} onImageDeleted={handleImageDeleted} onRefreshStore={handleRefreshStore} />
+                  <ExistingImageManager storeId={currentStore._id} mainBannerImages={currentStore.mainBannerImages || []} onImageDeleted={handleImageDeleted} onRefreshStore={handleRefreshStore} />
                 </div>
               )}
 
               {/* 새 이미지 업로드 */}
               <div>
                 <h4 className="text-sm font-medium text-gray-700 mb-3">{isEdit ? "새 이미지 추가" : "이미지 업로드"}</h4>
-                <ImageUpload onImagesChange={handleImagesChange} maxImages={5} storeId={isEdit ? store?._id : null} initialImages={uploadedImages} onRefreshStore={handleRefreshStore} />
+                <ImageUpload onImagesChange={handleImagesChange} maxImages={5} storeId={isEdit ? currentStore?._id : null} initialImages={uploadedImages} onRefreshStore={handleRefreshStore} />
               </div>
             </div>
           </div>
