@@ -1,4 +1,5 @@
-import axios, { AxiosResponse } from "axios";
+import axios from "axios";
+import { supabase } from "../../lib/supabaseClient";
 
 const API_BASE_URL = import.meta.env['VITE_API_URL'] || "";
 const LEGACY_API_URL = import.meta.env['VITE_LEGACY_API_URL'] || API_BASE_URL;
@@ -21,40 +22,31 @@ export const legacyApiClient = axios.create({
   withCredentials: true,
 });
 
-// 요청 인터셉터 - 토큰 자동 추가
+// 요청 인터셉터 — Supabase access_token 사용
 apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("admin_token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+  async (config) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      config.headers.Authorization = `Bearer ${session.access_token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error),
 );
 
-// 응답 인터셉터 - 에러 처리 및 응답 변환
+// 응답 인터셉터 — 401 시 Supabase 로그아웃
 apiClient.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    console.error('API Error:', error);
-    
-    // 401 에러 시 로그아웃
+  (response) => response,
+  async (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("admin_token");
-      localStorage.removeItem("admin_data");
+      await supabase.auth.signOut();
       window.location.href = "/login";
     }
-    
-    // 에러 메시지 표준화
-    const errorMessage = error.response?.data?.message || 
-                        error.message || 
+
+    const errorMessage = error.response?.data?.message ||
+                        error.message ||
                         '서버 오류가 발생했습니다.';
-    
+
     return Promise.reject({
       ...error,
       message: errorMessage,
@@ -65,28 +57,21 @@ apiClient.interceptors.response.use(
 
 // legacyApiClient에도 동일한 인터셉터 적용
 legacyApiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("admin_token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+  async (config) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      config.headers.Authorization = `Bearer ${session.access_token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error),
 );
 
 legacyApiClient.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    console.error('Legacy API Error:', error);
-
+  (response) => response,
+  async (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("admin_token");
-      localStorage.removeItem("admin_data");
+      await supabase.auth.signOut();
       window.location.href = "/login";
     }
 

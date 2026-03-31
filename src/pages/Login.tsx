@@ -4,7 +4,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useForm, SubmitHandler } from "react-hook-form";
 
 interface LoginFormData {
-  username: string;
+  email: string;
   password: string;
 }
 
@@ -24,15 +24,10 @@ export default function Login() {
   }
 
   const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
-    console.log("🔥 LOGIN FORM SUBMITTED!");
-    console.log("Form data:", data);
-
     setLoading(true);
     setError("");
 
-    console.log("About to call login function...");
-    const result = await login(data.username, data.password);
-    console.log("Login result:", result);
+    const result = await login(data.email, data.password);
 
     if (!result.success) {
       setError(result.error || "로그인에 실패했습니다");
@@ -47,7 +42,6 @@ export default function Login() {
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Spotline Admin</h2>
           <p className="mt-2 text-center text-sm text-gray-600">관리자 계정으로 로그인하세요</p>
-          <p className="mt-1 text-center text-xs text-gray-500">시스템 시간: 한국 표준시 (KST) 기준</p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
@@ -55,16 +49,16 @@ export default function Login() {
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                사용자명 또는 이메일
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                이메일
               </label>
               <input
-                {...register("username", { required: "사용자명을 입력하세요" })}
-                type="text"
+                {...register("email", { required: "이메일을 입력하세요" })}
+                type="email"
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                placeholder="spotline-admin"
+                placeholder="admin@spotline.kr"
               />
-              {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>}
+              {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
             </div>
 
             <div>
