@@ -1,8 +1,16 @@
 {
-  "sessionCount": 1,
+  "sessionCount": 2,
   "lastSession": {
-    "startedAt": "2026-03-18T13:13:23.895Z",
+    "startedAt": "2026-03-31T00:00:00.000Z",
     "platform": "claude",
     "level": "Dynamic"
+  },
+  "pdca": {
+    "feature": "admin-route-crud",
+    "phase": "archived",
+    "matchRate": 98,
+    "iterationCount": 0,
+    "archivedTo": "docs/archive/2026-03/admin-route-crud/",
+    "updatedAt": "2026-03-31T00:00:00.000Z"
   }
 }

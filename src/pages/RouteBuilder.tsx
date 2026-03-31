@@ -1,10 +1,16 @@
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 import { Loader2 } from "lucide-react";
 import { routeAPI } from "../services/v2/routeAPI";
-import type { SpotDetailResponse, CreateRouteRequest, RouteTheme } from "../types/v2";
+import type {
+  SpotDetailResponse,
+  CreateRouteRequest,
+  UpdateRouteRequest,
+  RouteTheme,
+  RouteSpotDetail,
+} from "../types/v2";
 import { AREAS, ROUTE_THEMES } from "../constants";
 import RouteSpotSelector from "../components/curation/RouteSpotSelector";
 import RouteSpotList, { RouteSpotItem } from "../components/curation/RouteSpotList";
@@ -18,14 +24,88 @@ interface FormValues {
   area: string;
 }
 
+/** RouteSpotDetail → SpotDetailResponse 최소 매핑 */
+function toSpotDetail(rs: RouteSpotDetail): SpotDetailResponse {
+  return {
+    id: rs.spotId,
+    slug: rs.spotSlug,
+    title: rs.spotTitle,
+    category: rs.spotCategory as SpotDetailResponse["category"],
+    area: rs.spotArea,
+    address: rs.spotAddress,
+    latitude: rs.spotLatitude,
+    longitude: rs.spotLongitude,
+    crewNote: rs.crewNote,
+    media: rs.spotMedia,
+    // 미사용 필드 기본값
+    description: null,
+    source: "CREW",
+    sido: null,
+    sigungu: null,
+    dong: null,
+    blogUrl: null,
+    instagramUrl: null,
+    websiteUrl: null,
+    naverPlaceId: null,
+    kakaoPlaceId: null,
+    tags: [],
+    likesCount: 0,
+    savesCount: 0,
+    viewsCount: 0,
+    creatorType: "crew",
+    creatorName: null,
+    createdAt: "",
+    placeInfo: null,
+  };
+}
+
 export default function RouteBuilder() {
+  const { slug } = useParams<{ slug?: string }>();
+  const isEditMode = !!slug;
+
   const [items, setItems] = useState<RouteSpotItem[]>([]);
+  const [initialized, setInitialized] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
     defaultValues: { title: "", description: "", theme: "DATE", area: "" },
   });
+
+  // Edit mode: 기존 데이터 로드
+  const { data: existingRoute } = useQuery(
+    ["route", slug],
+    () => routeAPI.getBySlug(slug!),
+    { enabled: isEditMode },
+  );
+
+  // 로드 완료 시 form + items 초기화
+  useEffect(() => {
+    if (existingRoute && !initialized) {
+      const r = existingRoute.data;
+      reset({
+        title: r.title,
+        description: r.description ?? "",
+        theme: r.theme,
+        area: r.area,
+      });
+      setItems(
+        r.spots.map((s) => ({
+          spot: toSpotDetail(s),
+          meta: {
+            spotId: s.spotId,
+            order: s.order,
+            suggestedTime: s.suggestedTime ?? undefined,
+            stayDuration: s.stayDuration ?? undefined,
+            walkingTimeToNext: s.walkingTimeToNext ?? undefined,
+            distanceToNext: s.distanceToNext ?? undefined,
+            transitionNote: s.transitionNote ?? undefined,
+          },
+        })),
+      );
+      setInitialized(true);
+    }
+  }, [existingRoute, initialized, reset]);
 
   const addedIds = new Set(items.map((i) => i.spot.id));
 
@@ -35,7 +115,7 @@ export default function RouteBuilder() {
   const totalWalkingMin = distances.reduce((sum, d) => sum + (d.walkingTimeToNext ?? 0), 0);
   const totalStayMin = items.reduce((sum, item) => sum + (item.meta.stayDuration ?? 0), 0);
 
-  const mutation = useMutation(
+  const createMutation = useMutation(
     (data: CreateRouteRequest) => routeAPI.create(data),
     {
       onSuccess: () => {
@@ -44,6 +124,19 @@ export default function RouteBuilder() {
       },
     }
   );
+
+  const updateMutation = useMutation(
+    (data: UpdateRouteRequest) => routeAPI.update(slug!, data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(["routes"]);
+        queryClient.invalidateQueries(["route", slug]);
+        navigate("/routes");
+      },
+    }
+  );
+
+  const mutation = isEditMode ? updateMutation : createMutation;
 
   const handleAdd = (spot: SpotDetailResponse) => {
     if (addedIds.has(spot.id)) return;
@@ -59,41 +152,59 @@ export default function RouteBuilder() {
     ]);
   };
 
+  const buildSpots = () =>
+    items.map((item, i) => {
+      const auto = distances[i];
+      return {
+        spotId: item.meta.spotId,
+        order: item.meta.order,
+        suggestedTime: item.meta.suggestedTime || undefined,
+        stayDuration: item.meta.stayDuration || undefined,
+        walkingTimeToNext: item.meta.walkingTimeToNext || auto?.walkingTimeToNext || undefined,
+        distanceToNext: auto?.distanceToNext || undefined,
+        transitionNote: item.meta.transitionNote || undefined,
+      };
+    });
+
   const doSubmit = (values: FormValues) => {
     if (items.length === 0) return;
 
-    const req: CreateRouteRequest = {
-      title: values.title,
-      description: values.description || undefined,
-      theme: values.theme,
-      area: values.area,
-      spots: items.map((item, i) => {
-        const auto = distances[i];
-        return {
-          spotId: item.meta.spotId,
-          order: item.meta.order,
-          suggestedTime: item.meta.suggestedTime || undefined,
-          stayDuration: item.meta.stayDuration || undefined,
-          walkingTimeToNext: item.meta.walkingTimeToNext || auto?.walkingTimeToNext || undefined,
-          distanceToNext: auto?.distanceToNext || undefined,
-          transitionNote: item.meta.transitionNote || undefined,
-        };
-      }),
-      creatorName: "crew",
-    };
-    mutation.mutate(req);
+    if (isEditMode) {
+      const req: UpdateRouteRequest = {
+        title: values.title,
+        description: values.description || undefined,
+        theme: values.theme,
+        area: values.area,
+        spots: buildSpots(),
+      };
+      updateMutation.mutate(req);
+    } else {
+      const req: CreateRouteRequest = {
+        title: values.title,
+        description: values.description || undefined,
+        theme: values.theme,
+        area: values.area,
+        spots: buildSpots(),
+        creatorName: "crew",
+      };
+      createMutation.mutate(req);
+    }
   };
 
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Route 빌더</h1>
-        <p className="text-sm text-gray-500 mt-1">Spot을 선택하여 Route를 구성합니다</p>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {isEditMode ? "Route 수정" : "Route 빌더"}
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">
+          {isEditMode ? "Route 정보를 수정합니다" : "Spot을 선택하여 Route를 구성합니다"}
+        </p>
       </div>
 
       {mutation.isError && (
         <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
-          Route 생성에 실패했습니다: {(mutation.error as any)?.message ?? "알 수 없는 오류"}
+          Route {isEditMode ? "수정" : "생성"}에 실패했습니다: {(mutation.error as any)?.message ?? "알 수 없는 오류"}
         </div>
       )}
 
@@ -182,7 +293,7 @@ export default function RouteBuilder() {
             className="flex items-center px-6 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {mutation.isLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            Route 생성 ({items.length}개 Spot)
+            {isEditMode ? "Route 수정" : "Route 생성"} ({items.length}개 Spot)
           </button>
         </div>
       </form>

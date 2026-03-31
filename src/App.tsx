@@ -38,6 +38,7 @@ function App() {
           <Route path="curation" element={<SpotCuration />} />
           <Route path="spots" element={<SpotManagement />} />
           <Route path="routes/new" element={<RouteBuilder />} />
+          <Route path="routes/:slug/edit" element={<RouteBuilder />} />
           <Route path="routes" element={<RouteManagement />} />
           <Route path="partners" element={<PartnerManagement />} />
           <Route path="partners/new" element={<PartnerRegistration />} />

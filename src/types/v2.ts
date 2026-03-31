@@ -200,6 +200,14 @@ export interface CreateRouteRequest {
   creatorName?: string;
 }
 
+export interface UpdateRouteRequest {
+  title?: string;
+  description?: string;
+  theme?: RouteTheme;
+  area?: string;
+  spots?: RouteSpotRequest[];
+}
+
 // ── Partner ──
 
 export type PartnerTier = "BASIC" | "PREMIUM";

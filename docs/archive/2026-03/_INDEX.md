@@ -4,6 +4,7 @@
 |---------|:----------:|:----------:|----------|----------|
 | [crew-curation-tool](./crew-curation-tool/) | 100% | 0 | 1 day | 2026-03-28 |
 | [crew-curation-tool-2b](./crew-curation-tool-2b/) | 96% | 0 | 1 day | 2026-03-28 |
+| [admin-route-crud](./admin-route-crud/) | 98% | 0 | 1 day | 2026-03-31 |
 
 ## Documents
 
@@ -24,3 +25,12 @@
 | Design | [crew-curation-tool-2b.design.md](./crew-curation-tool-2b/crew-curation-tool-2b.design.md) |
 | Analysis | [crew-curation-tool-2b.analysis.md](./crew-curation-tool-2b/crew-curation-tool-2b.analysis.md) |
 | Report | [crew-curation-tool-2b.report.md](./crew-curation-tool-2b/crew-curation-tool-2b.report.md) |
+
+### admin-route-crud (Route CRUD — Backend PUT/DELETE API + Admin 상세/수정/삭제)
+
+| Document | File |
+|----------|------|
+| Plan | [admin-route-crud.plan.md](./admin-route-crud/admin-route-crud.plan.md) |
+| Design | [admin-route-crud.design.md](./admin-route-crud/admin-route-crud.design.md) |
+| Analysis | [admin-route-crud.analysis.md](./admin-route-crud/admin-route-crud.analysis.md) |
+| Report | [admin-route-crud.report.md](./admin-route-crud/admin-route-crud.report.md) |

@@ -3,6 +3,7 @@ import type {
   RouteDetailResponse,
   RoutePreviewResponse,
   CreateRouteRequest,
+  UpdateRouteRequest,
   SpringPage,
   RouteTheme,
 } from "../../types/v2";
@@ -27,4 +28,10 @@ export const routeAPI = {
 
   create: (data: CreateRouteRequest) =>
     apiClient.post<RouteDetailResponse>("/api/v2/routes", data),
+
+  update: (slug: string, data: UpdateRouteRequest) =>
+    apiClient.put<RouteDetailResponse>(`/api/v2/routes/${slug}`, data),
+
+  delete: (slug: string) =>
+    apiClient.delete(`/api/v2/routes/${slug}`),
 };

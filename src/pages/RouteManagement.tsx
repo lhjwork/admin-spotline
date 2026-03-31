@@ -1,18 +1,21 @@
 import { useState } from "react";
-import { useQuery } from "react-query";
+import { useQuery, useQueryClient } from "react-query";
 import { useNavigate } from "react-router-dom";
 import DataTable from "../components/DataTable";
 import { routeAPI } from "../services/v2/routeAPI";
 import { toDataTablePagination } from "../types/v2";
 import type { RouteTheme } from "../types/v2";
 import { AREAS, ROUTE_THEMES } from "../constants";
-import { Plus, Eye } from "lucide-react";
+import { Plus, Eye, Pencil, Trash2 } from "lucide-react";
+import RouteDetailModal from "../components/curation/RouteDetailModal";
 
 export default function RouteManagement() {
   const [page, setPage] = useState(1);
   const [areaFilter, setAreaFilter] = useState("");
   const [themeFilter, setThemeFilter] = useState("");
+  const [detailSlug, setDetailSlug] = useState<string | null>(null);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery(
     ["routes", page, areaFilter, themeFilter],
@@ -28,6 +31,13 @@ export default function RouteManagement() {
   const springPage = data?.data;
   const routes = springPage?.content ?? [];
   const pagination = springPage ? toDataTablePagination(springPage) : null;
+
+  const handleDelete = async (slug: string) => {
+    if (!window.confirm("이 Route를 삭제하시겠습니까?")) return;
+    await routeAPI.delete(slug);
+    queryClient.invalidateQueries(["routes"]);
+    setDetailSlug(null);
+  };
 
   const columns = [
     { key: "title", label: "제목" },
@@ -99,14 +109,36 @@ export default function RouteManagement() {
         actions={(row) => (
           <div className="py-1">
             <button
-              onClick={() => {/* Route 상세 보기 - 향후 구현 */}}
+              onClick={() => setDetailSlug(row.slug)}
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
             >
               <Eye className="h-4 w-4 mr-2" /> 상세 보기
             </button>
+            <button
+              onClick={() => navigate(`/routes/${row.slug}/edit`)}
+              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              <Pencil className="h-4 w-4 mr-2" /> 수정
+            </button>
+            <button
+              onClick={() => handleDelete(row.slug)}
+              className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4 mr-2" /> 삭제
+            </button>
           </div>
         )}
       />
+
+      {/* Route 상세 모달 */}
+      {detailSlug && (
+        <RouteDetailModal
+          slug={detailSlug}
+          onClose={() => setDetailSlug(null)}
+          onEdit={(s) => { setDetailSlug(null); navigate(`/routes/${s}/edit`); }}
+          onDelete={(s) => handleDelete(s)}
+        />
+      )}
     </div>
   );
 }
