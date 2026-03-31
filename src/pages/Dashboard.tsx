@@ -1,19 +1,83 @@
 import { useQuery } from "react-query";
-import { dashboardAPI } from "../services/api";
 import { useNavigate } from "react-router-dom";
-import { Store, QrCode, TrendingUp, Users, Activity, ArrowUpRight, CheckCircle, TestTube, BarChart3 } from "lucide-react";
+import { MapPin, Route, Search, ArrowUpRight } from "lucide-react";
+import { spotAPI } from "../services/v2/spotAPI";
+import { routeAPI } from "../services/v2/routeAPI";
+import { AREAS, SPOT_CATEGORIES } from "../constants";
+import type { SpotCategory } from "../types/v2";
+import CurationProgress from "../components/curation/CurationProgress";
+import AreaHeatmap from "../components/dashboard/AreaHeatmap";
+import CategoryPieChart from "../components/dashboard/CategoryPieChart";
+import CurationGoalDetail from "../components/dashboard/CurationGoalDetail";
+
+// 목표 지역 (7개)
+const GOAL_AREAS = [
+  { area: "성수", target: 50 },
+  { area: "을지로", target: 40 },
+  { area: "연남동", target: 40 },
+  { area: "홍대", target: 40 },
+  { area: "이태원", target: 30 },
+  { area: "한남동", target: 30 },
+  { area: "종로", target: 30 },
+];
+const TOTAL_SPOT_TARGET = 300;
+
+const CATEGORY_KEYS = Object.keys(SPOT_CATEGORIES) as SpotCategory[];
 
 export default function Dashboard() {
   const navigate = useNavigate();
 
-  const {
-    data: stats,
-    isLoading,
-    error,
-  } = useQuery("dashboard-stats", () => dashboardAPI.getStats(), {
-    select: (response) => response.data,
-    refetchInterval: 30000, // 30초마다 새로고침
-  });
+  const { data: spotsData, isLoading: spotsLoading } = useQuery(
+    ["dashboard-spots"],
+    () => spotAPI.getList({ page: 1, size: 1 }),
+    { refetchOnWindowFocus: false }
+  );
+
+  const { data: routesData, isLoading: routesLoading } = useQuery(
+    ["dashboard-routes"],
+    () => routeAPI.getPopular({ page: 1, size: 1 }),
+    { refetchOnWindowFocus: false }
+  );
+
+  // 20개 지역별 Spot 수
+  const areaQueries = AREAS.map((area) =>
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useQuery(
+      ["dashboard-area", area],
+      () => spotAPI.getList({ page: 1, size: 1, area }),
+      { refetchOnWindowFocus: false }
+    )
+  );
+
+  // 10개 카테고리별 Spot 수
+  const categoryQueries = CATEGORY_KEYS.map((cat) =>
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useQuery(
+      ["dashboard-category", cat],
+      () => spotAPI.getList({ page: 1, size: 1, category: cat }),
+      { refetchOnWindowFocus: false }
+    )
+  );
+
+  const totalSpots = spotsData?.data?.totalElements ?? 0;
+  const totalRoutes = routesData?.data?.totalElements ?? 0;
+  const isLoading = spotsLoading || routesLoading;
+
+  const areaCounts = AREAS.map((area, i) => ({
+    area,
+    count: areaQueries[i].data?.data?.totalElements ?? 0,
+  }));
+
+  const categoryCounts = CATEGORY_KEYS.map((cat, i) => ({
+    category: cat,
+    label: SPOT_CATEGORIES[cat],
+    count: categoryQueries[i].data?.data?.totalElements ?? 0,
+  }));
+
+  const goals = GOAL_AREAS.map((g) => ({
+    ...g,
+    current: areaCounts.find((a) => a.area === g.area)?.count ?? 0,
+  }));
 
   if (isLoading) {
     return (
@@ -23,135 +87,86 @@ export default function Dashboard() {
     );
   }
 
-  if (error) {
-    return <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">데이터를 불러오는데 실패했습니다.</div>;
-  }
-
   return (
-    <div className="space-y-8">
-      {/* 헤더 */}
+    <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">SpotLine 관리자 대시보드</h1>
-        <p className="text-gray-600 mt-2">실제 운영 서비스를 관리합니다</p>
+        <h1 className="text-2xl font-bold text-gray-900">크루 큐레이션 대시보드</h1>
+        <p className="text-sm text-gray-500 mt-1">Spot과 Route 큐레이션 현황을 한눈에 확인합니다</p>
       </div>
 
-      {/* 실제 운영 통계 */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center space-x-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <h2 className="text-lg font-semibold text-gray-900">실제 운영 서비스</h2>
-            <span className="text-sm text-gray-500">사용자 분석 데이터 수집</span>
+      <CurationProgress todayCount={totalSpots} />
+
+      {/* 통계 카드 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-500">총 Spot 수</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{totalSpots}</p>
+              <p className="text-xs text-gray-400 mt-1">목표: 200~300개</p>
+            </div>
+            <div className="h-12 w-12 bg-primary-100 rounded-lg flex items-center justify-center">
+              <MapPin className="h-6 w-6 text-primary-600" />
+            </div>
           </div>
         </div>
 
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-green-50 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-green-600">운영 매장</p>
-                  <p className="text-2xl font-bold text-green-900">{stats?.totalStores || 0}</p>
-                  <p className="text-xs text-green-700">활성: {stats?.activeStores || 0}개</p>
-                </div>
-                <Store className="h-8 w-8 text-green-600" />
-              </div>
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-500">총 Route 수</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{totalRoutes}</p>
+              <p className="text-xs text-gray-400 mt-1">목표: 15~20개</p>
             </div>
-
-            <div className="bg-blue-50 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-blue-600">QR 스캔</p>
-                  <p className="text-2xl font-bold text-blue-900">{stats?.totalQRScans || 0}</p>
-                  <p className="text-xs text-blue-700">오늘: {stats?.todayScans || 0}회</p>
-                </div>
-                <QrCode className="h-8 w-8 text-blue-600" />
-              </div>
-            </div>
-
-            <div className="bg-purple-50 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-purple-600">추천 관계</p>
-                  <p className="text-2xl font-bold text-purple-900">{stats?.totalRecommendations || 0}</p>
-                  <p className="text-xs text-purple-700">활성 연결</p>
-                </div>
-                <ArrowUpRight className="h-8 w-8 text-purple-600" />
-              </div>
-            </div>
-
-            <div className="bg-orange-50 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-orange-600">방문자</p>
-                  <p className="text-2xl font-bold text-orange-900">{stats?.uniqueVisitors || 0}</p>
-                  <p className="text-xs text-orange-700">전환율: {stats?.conversionRate || 0}%</p>
-                </div>
-                <Users className="h-8 w-8 text-orange-600" />
-              </div>
+            <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Route className="h-6 w-6 text-blue-600" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* 빠른 작업 */}
+      {/* 히트맵 + 파이 차트 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 실제 운영 관리 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">실제 운영 관리</h3>
-          </div>
-          <div className="p-6 space-y-3">
-            <button onClick={() => navigate("/stores")} className="w-full flex items-center justify-between p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50">
-              <div className="flex items-center space-x-3">
-                <Store className="h-5 w-5 text-green-600" />
-                <span className="font-medium">매장 관리</span>
-              </div>
-              <ArrowUpRight className="h-4 w-4 text-gray-400" />
-            </button>
-
-            <button onClick={() => navigate("/recommendations")} className="w-full flex items-center justify-between p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50">
-              <div className="flex items-center space-x-3">
-                <ArrowUpRight className="h-5 w-5 text-purple-600" />
-                <span className="font-medium">추천 관리</span>
-              </div>
-              <ArrowUpRight className="h-4 w-4 text-gray-400" />
-            </button>
-
-            <button onClick={() => navigate("/analytics")} className="w-full flex items-center justify-between p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50">
-              <div className="flex items-center space-x-3">
-                <BarChart3 className="h-5 w-5 text-blue-600" />
-                <span className="font-medium">분석 데이터</span>
-              </div>
-              <ArrowUpRight className="h-4 w-4 text-gray-400" />
-            </button>
-          </div>
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <AreaHeatmap areaCounts={areaCounts} />
         </div>
-
-        {/* 데모 시스템 전환 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">데모 시스템</h3>
-          </div>
-          <div className="p-6">
-            <div className="text-center space-y-4">
-              <TestTube className="h-12 w-12 text-orange-600 mx-auto" />
-              <div>
-                <h4 className="text-lg font-medium text-gray-900">데모 관리 모드</h4>
-                <p className="text-sm text-gray-600 mt-1">업주 소개용 데모 시스템을 별도로 관리합니다</p>
-              </div>
-              <button onClick={() => navigate("/demo")} className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
-                <TestTube className="h-5 w-5" />
-                <span>데모 관리 모드로 전환</span>
-              </button>
-              <div className="text-xs text-gray-500 space-y-1">
-                <p>• 업주 소개용 전용 시스템</p>
-                <p>• 실제 데이터와 완전 분리</p>
-                <p>• 사용자 데이터 수집 없음</p>
-              </div>
-            </div>
-          </div>
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <CategoryPieChart categoryCounts={categoryCounts} />
         </div>
+      </div>
+
+      {/* 목표 달성률 */}
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <CurationGoalDetail
+          goals={goals}
+          totalTarget={TOTAL_SPOT_TARGET}
+          totalCurrent={totalSpots}
+        />
+      </div>
+
+      {/* 빠른 액션 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <button
+          onClick={() => navigate("/curation")}
+          className="flex items-center justify-between p-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+        >
+          <div className="flex items-center space-x-3">
+            <Search className="h-5 w-5" />
+            <span className="font-medium">큐레이션 시작</span>
+          </div>
+          <ArrowUpRight className="h-5 w-5" />
+        </button>
+
+        <button
+          onClick={() => navigate("/routes/new")}
+          className="flex items-center justify-between p-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <div className="flex items-center space-x-3">
+            <Route className="h-5 w-5" />
+            <span className="font-medium">Route 만들기</span>
+          </div>
+          <ArrowUpRight className="h-5 w-5" />
+        </button>
       </div>
     </div>
   );

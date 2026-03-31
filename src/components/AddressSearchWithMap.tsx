@@ -29,6 +29,7 @@ interface AddressSearchWithMapProps {
   onAddressSelect: (data: AddressSelectData) => void;
   initialAddress?: string;
   initialCoordinates?: Coordinates | null;
+  hideCoordinateInfo?: boolean;
 }
 
 // 전역 타입 선언
@@ -61,10 +62,11 @@ declare global {
   }
 }
 
-export default function AddressSearchWithMap({ 
-  onAddressSelect, 
-  initialAddress = '', 
-  initialCoordinates = null 
+export default function AddressSearchWithMap({
+  onAddressSelect,
+  initialAddress = '',
+  initialCoordinates = null,
+  hideCoordinateInfo = false
 }: AddressSearchWithMapProps) {
   const [address, setAddress] = useState<string>(initialAddress);
   const [coordinates, setCoordinates] = useState<Coordinates | null>(initialCoordinates);
@@ -82,17 +84,29 @@ export default function AddressSearchWithMap({
     setCoordinates(initialCoordinates);
   }, [initialAddress, initialCoordinates]);
 
-  // 카카오 지도 초기화
-  const initializeKakaoMap = () => {
-    if (typeof window !== 'undefined' && window.kakao && window.kakao.maps) {
-      window.kakao.maps.load(() => {
-        setMapLoaded(true);
-      });
-    }
-  };
-
+  // 카카오 지도 초기화 (SDK 로드 대기 포함)
   useEffect(() => {
-    initializeKakaoMap();
+    const tryLoad = () => {
+      if (typeof window !== 'undefined' && window.kakao && window.kakao.maps) {
+        window.kakao.maps.load(() => {
+          setMapLoaded(true);
+        });
+        return true;
+      }
+      return false;
+    };
+
+    if (!tryLoad()) {
+      // SDK 스크립트 로드 대기 (최대 5초)
+      let attempts = 0;
+      const interval = setInterval(() => {
+        attempts++;
+        if (tryLoad() || attempts > 20) {
+          clearInterval(interval);
+        }
+      }, 250);
+      return () => clearInterval(interval);
+    }
   }, []);
 
   // 카카오 지오코딩 함수 (REST API 사용)
@@ -288,8 +302,9 @@ export default function AddressSearchWithMap({
 
                   setAddress(fullAddress);
 
-                  // 좌표 변환 시도
-                  const coords = await getCoordinatesFromAddress(fullAddress);
+                  // 좌표 변환 시도 (JavaScript SDK 우선, REST API 폴백)
+                  const coords = await getCoordinatesFromJavaScriptSDK(fullAddress)
+                    ?? await getCoordinatesFromAddress(fullAddress);
                   setCoordinates(coords);
 
                   // 좌표가 있으면 지도 표시
@@ -414,7 +429,7 @@ export default function AddressSearchWithMap({
         </div>
 
         {/* 좌표 정보 표시 */}
-        {coordinates && (
+        {!hideCoordinateInfo && coordinates && (
           <div className="bg-green-50 border border-green-200 rounded-md p-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2 text-green-800">
@@ -422,7 +437,7 @@ export default function AddressSearchWithMap({
                 <span className="text-sm font-medium">좌표 정보</span>
                 {coordinates.source && (
                   <span className="text-xs bg-green-200 px-2 py-1 rounded">
-                    {coordinates.source === 'kakao-rest' ? 'REST API' : 
+                    {coordinates.source === 'kakao-rest' ? 'REST API' :
                      coordinates.source === 'kakao-js' ? 'JavaScript SDK' : coordinates.source}
                   </span>
                 )}
@@ -449,20 +464,40 @@ export default function AddressSearchWithMap({
         )}
 
         {/* 좌표 변환 실패 경고 */}
-        {address && !coordinates && !loading && (
+        {!hideCoordinateInfo && address && !coordinates && !loading && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-            <div className="flex items-center space-x-2 text-yellow-800">
-              <AlertCircle className="h-4 w-4" />
-              <span className="text-sm font-medium">좌표 변환 실패</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 text-yellow-800">
+                <AlertCircle className="h-4 w-4" />
+                <span className="text-sm font-medium">좌표 변환 실패</span>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  setLoading(true);
+                  const coords = await getCoordinatesFromJavaScriptSDK(address)
+                    ?? await getCoordinatesFromAddress(address);
+                  setCoordinates(coords);
+                  if (coords) {
+                    onAddressSelect({ address, coordinates: coords, addressData: {} as AddressData });
+                    setShowMap(true);
+                    setTimeout(() => displayMapWithMarker(coords, address), 100);
+                  }
+                  setLoading(false);
+                }}
+                className="text-xs bg-yellow-200 hover:bg-yellow-300 text-yellow-800 px-2 py-1 rounded"
+              >
+                재시도
+              </button>
             </div>
             <div className="mt-1 text-sm text-yellow-700">
-              카카오 API 키를 설정하면 자동으로 좌표를 가져올 수 있습니다.
+              좌표를 가져오지 못했습니다. 재시도 버튼을 눌러주세요.
             </div>
           </div>
         )}
 
         {/* 지도 표시 */}
-        {showMap && coordinates && (
+        {!hideCoordinateInfo && showMap && coordinates && (
           <div className="border border-gray-300 rounded-md overflow-hidden">
             <div className="bg-gray-100 px-3 py-2 border-b border-gray-300">
               <div className="flex items-center justify-between">

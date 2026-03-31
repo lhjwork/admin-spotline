@@ -1,6 +1,9 @@
-import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { LayoutDashboard, Store, BarChart3, Users, LogOut, Menu, X, ArrowRight, LucideIcon, TestTube } from "lucide-react";
+import {
+  LayoutDashboard, Search, MapPin, Route, List,
+  Users, LogOut, Menu, X, Store, LucideIcon,
+} from "lucide-react";
 import { useState } from "react";
 
 interface NavigationItem {
@@ -13,126 +16,81 @@ interface NavigationItem {
 const navigation: NavigationItem[] = [
   { name: "대시보드", href: "/dashboard", icon: LayoutDashboard },
 
-  // 실제 운영 섹션
-  { name: "매장 관리", href: "/stores", icon: Store, section: "real" },
-  { name: "추천 관리", href: "/recommendations", icon: ArrowRight, section: "real" },
-  { name: "분석", href: "/analytics", icon: BarChart3, section: "real" },
+  // 큐레이션 섹션
+  { name: "Spot 큐레이션", href: "/curation", icon: Search, section: "curation" },
+  { name: "Spot 관리", href: "/spots", icon: MapPin, section: "curation" },
+  { name: "Route 빌더", href: "/routes/new", icon: Route, section: "curation" },
+  { name: "Route 관리", href: "/routes", icon: List, section: "curation" },
+
+  // 파트너 섹션
+  { name: "파트너 관리", href: "/partners", icon: Store, section: "partner" },
 
   // 시스템 섹션
   { name: "어드민 관리", href: "/admins", icon: Users, section: "system" },
 ];
 
+function NavLink({ item, onClick }: { item: NavigationItem; onClick?: () => void }) {
+  const location = useLocation();
+  const Icon = item.icon;
+  const isActive =
+    location.pathname === item.href ||
+    (item.href !== "/dashboard" && item.href !== "/routes/new" && location.pathname.startsWith(item.href));
+
+  return (
+    <Link
+      to={item.href}
+      onClick={onClick}
+      className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
+        isActive ? "bg-primary-100 text-primary-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+      }`}
+    >
+      <Icon className="mr-3 h-5 w-5" />
+      {item.name}
+    </Link>
+  );
+}
+
+function NavSection({ title, section, onClick }: { title: string; section: string; onClick?: () => void }) {
+  const items = navigation.filter((item) => item.section === section);
+  return (
+    <div className="pt-4">
+      <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</h3>
+      <div className="mt-2 space-y-1">
+        {items.map((item) => (
+          <NavLink key={item.name} item={item} onClick={onClick} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Layout() {
   const { admin, logout } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const close = () => setSidebarOpen(false);
+
+  const sidebarContent = (onNav?: () => void) => (
+    <>
+      {navigation.filter((i) => !i.section).map((item) => (
+        <NavLink key={item.name} item={item} onClick={onNav} />
+      ))}
+      <NavSection title="큐레이션" section="curation" onClick={onNav} />
+      <NavSection title="파트너" section="partner" onClick={onNav} />
+      <NavSection title="시스템" section="system" onClick={onNav} />
+    </>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 모바일 사이드바 */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? "block" : "hidden"}`}>
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={close} />
         <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white">
           <div className="flex h-16 items-center justify-between px-4">
             <h1 className="text-xl font-bold text-gray-900">Spotline Admin</h1>
-            <button onClick={() => setSidebarOpen(false)}>
-              <X className="h-6 w-6" />
-            </button>
+            <button onClick={close}><X className="h-6 w-6" /></button>
           </div>
-
-          <nav className="flex-1 space-y-1 px-2 py-4">
-            {/* 대시보드 */}
-            {navigation
-              .filter((item) => !item.section)
-              .map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.href;
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
-                      isActive ? "bg-primary-100 text-primary-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                    }`}
-                  >
-                    <Icon className="mr-3 h-5 w-5" />
-                    {item.name}
-                  </Link>
-                );
-              })}
-
-            {/* 실제 운영 섹션 */}
-            <div className="pt-4">
-              <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">실제 운영</h3>
-              <div className="mt-2 space-y-1">
-                {navigation
-                  .filter((item) => item.section === "real")
-                  .map((item) => {
-                    const Icon = item.icon;
-                    const isActive = location.pathname === item.href;
-                    return (
-                      <Link
-                        key={item.name}
-                        to={item.href}
-                        onClick={() => setSidebarOpen(false)}
-                        className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
-                          isActive ? "bg-primary-100 text-primary-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                        }`}
-                      >
-                        <Icon className="mr-3 h-5 w-5" />
-                        {item.name}
-                      </Link>
-                    );
-                  })}
-              </div>
-            </div>
-
-            {/* 데모 시스템 전환 버튼 */}
-            <div className="pt-4">
-              <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">데모 시스템</h3>
-              <div className="mt-2">
-                <button
-                  onClick={() => {
-                    navigate("/demo");
-                    setSidebarOpen(false);
-                  }}
-                  className="w-full group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-orange-50 hover:text-orange-700 border border-orange-200 hover:border-orange-300"
-                >
-                  <TestTube className="mr-3 h-5 w-5" />
-                  <span>데모 관리 모드</span>
-                  <ArrowRight className="ml-auto h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* 시스템 섹션 */}
-            <div className="pt-4">
-              <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">시스템</h3>
-              <div className="mt-2 space-y-1">
-                {navigation
-                  .filter((item) => item.section === "system")
-                  .map((item) => {
-                    const Icon = item.icon;
-                    const isActive = location.pathname === item.href;
-                    return (
-                      <Link
-                        key={item.name}
-                        to={item.href}
-                        onClick={() => setSidebarOpen(false)}
-                        className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
-                          isActive ? "bg-primary-100 text-primary-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                        }`}
-                      >
-                        <Icon className="mr-3 h-5 w-5" />
-                        {item.name}
-                      </Link>
-                    );
-                  })}
-              </div>
-            </div>
-          </nav>
+          <nav className="flex-1 space-y-1 px-2 py-4">{sidebarContent(close)}</nav>
         </div>
       </div>
 
@@ -142,105 +100,17 @@ export default function Layout() {
           <div className="flex h-16 items-center px-4">
             <h1 className="text-xl font-bold text-gray-900">Spotline Admin</h1>
           </div>
-
-          <nav className="flex-1 space-y-1 px-2 py-4">
-            {/* 대시보드 */}
-            {navigation
-              .filter((item) => !item.section)
-              .map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.href;
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
-                      isActive ? "bg-primary-100 text-primary-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                    }`}
-                  >
-                    <Icon className="mr-3 h-5 w-5" />
-                    {item.name}
-                  </Link>
-                );
-              })}
-
-            {/* 실제 운영 섹션 */}
-            <div className="pt-4">
-              <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">실제 운영</h3>
-              <div className="mt-2 space-y-1">
-                {navigation
-                  .filter((item) => item.section === "real")
-                  .map((item) => {
-                    const Icon = item.icon;
-                    const isActive = location.pathname === item.href;
-                    return (
-                      <Link
-                        key={item.name}
-                        to={item.href}
-                        className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
-                          isActive ? "bg-primary-100 text-primary-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                        }`}
-                      >
-                        <Icon className="mr-3 h-5 w-5" />
-                        {item.name}
-                      </Link>
-                    );
-                  })}
-              </div>
-            </div>
-
-            {/* 데모 시스템 전환 버튼 */}
-            <div className="pt-4">
-              <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">데모 시스템</h3>
-              <div className="mt-2">
-                <button
-                  onClick={() => navigate("/demo")}
-                  className="w-full group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-orange-50 hover:text-orange-700 border border-orange-200 hover:border-orange-300"
-                >
-                  <TestTube className="mr-3 h-5 w-5" />
-                  <span>데모 관리 모드</span>
-                  <ArrowRight className="ml-auto h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* 시스템 섹션 */}
-            <div className="pt-4">
-              <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">시스템</h3>
-              <div className="mt-2 space-y-1">
-                {navigation
-                  .filter((item) => item.section === "system")
-                  .map((item) => {
-                    const Icon = item.icon;
-                    const isActive = location.pathname === item.href;
-                    return (
-                      <Link
-                        key={item.name}
-                        to={item.href}
-                        className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
-                          isActive ? "bg-primary-100 text-primary-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                        }`}
-                      >
-                        <Icon className="mr-3 h-5 w-5" />
-                        {item.name}
-                      </Link>
-                    );
-                  })}
-              </div>
-            </div>
-          </nav>
+          <nav className="flex-1 space-y-1 px-2 py-4">{sidebarContent()}</nav>
         </div>
       </div>
 
       {/* 메인 콘텐츠 */}
       <div className="lg:pl-64">
-        {/* 상단 헤더 */}
         <div className="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-200">
           <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
             <button className="lg:hidden" onClick={() => setSidebarOpen(true)}>
               <Menu className="h-6 w-6" />
             </button>
-
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-700">
                 {admin?.username} ({admin?.role})
@@ -252,8 +122,6 @@ export default function Layout() {
             </div>
           </div>
         </div>
-
-        {/* 페이지 콘텐츠 */}
         <main className="p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>

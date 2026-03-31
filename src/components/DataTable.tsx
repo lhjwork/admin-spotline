@@ -1,4 +1,5 @@
-import { useState, ReactNode } from "react";
+import { useState, useEffect, useRef, useCallback, ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ChevronUp, ChevronDown, MoreVertical } from "lucide-react";
 
 interface Column {
@@ -28,6 +29,27 @@ interface DataTableProps {
 export default function DataTable({ columns, data, loading = false, pagination = null, onPageChange = null, sortable = true, actions = null }: DataTableProps) {
   const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: "asc" | "desc" }>({ key: null, direction: "asc" });
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; right: number } | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+
+  const openDropdown = useCallback((index: number, btn: HTMLButtonElement) => {
+    const rect = btn.getBoundingClientRect();
+    setDropdownPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    setActiveDropdown(index);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setActiveDropdown(null);
+      }
+    };
+    if (activeDropdown !== null) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [activeDropdown]);
 
   const handleSort = (key: string) => {
     if (!sortable) return;
@@ -94,12 +116,20 @@ export default function DataTable({ columns, data, loading = false, pagination =
                 ))}
                 {actions && (
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="relative">
-                      <button onClick={() => setActiveDropdown(activeDropdown === index ? null : index)} className="text-gray-400 hover:text-gray-600">
-                        <MoreVertical className="h-5 w-5" />
-                      </button>
-                      {activeDropdown === index && <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border">{actions(row)}</div>}
-                    </div>
+                    <button
+                      ref={(el) => { if (el) buttonRefs.current.set(index, el); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (activeDropdown === index) {
+                          setActiveDropdown(null);
+                        } else {
+                          openDropdown(index, e.currentTarget);
+                        }
+                      }}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <MoreVertical className="h-5 w-5" />
+                    </button>
                   </td>
                 )}
               </tr>
@@ -155,6 +185,17 @@ export default function DataTable({ columns, data, loading = false, pagination =
             </div>
           </div>
         </div>
+      )}
+
+      {activeDropdown !== null && dropdownPos && actions && createPortal(
+        <div
+          ref={dropdownRef}
+          className="fixed w-48 bg-white rounded-md shadow-lg z-50 border"
+          style={{ top: dropdownPos.top, right: dropdownPos.right }}
+        >
+          {actions(sortedData[activeDropdown])}
+        </div>,
+        document.body
       )}
     </div>
   );

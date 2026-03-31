@@ -1,4 +1,4 @@
-import { apiClient } from '../base/apiClient';
+import { legacyApiClient as apiClient } from '../base/apiClient';
 import { ApiResponseType } from '../base/types';
 import type { Admin, LoginResponse } from '../../types';
 

@@ -3,16 +3,14 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import Stores from "./pages/Stores";
-import OperationalStores from "./pages/OperationalStores";
-import SpotlineStartSettings from "./pages/SpotlineStartSettings";
-import DemoSystem from "./pages/DemoSystem";
-import LiveSystem from "./pages/LiveSystem";
-import Analytics from "./pages/Analytics";
-import SystemSettings from "./pages/SystemSettings";
+import SpotCuration from "./pages/SpotCuration";
+import SpotManagement from "./pages/SpotManagement";
+import RouteBuilder from "./pages/RouteBuilder";
+import RouteManagement from "./pages/RouteManagement";
 import Admins from "./pages/Admins";
-import Recommendations from "./pages/Recommendations";
-import RecommendationSettings from "./pages/RecommendationSettings";
+import PartnerManagement from "./pages/PartnerManagement";
+import PartnerRegistration from "./pages/PartnerRegistration";
+import PartnerDetail from "./pages/PartnerDetail";
 import { ReactNode } from "react";
 
 interface ProtectedRouteProps {
@@ -20,7 +18,8 @@ interface ProtectedRouteProps {
 }
 
 function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return null;
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 }
 
@@ -29,31 +28,21 @@ function App() {
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
+        <Route path="/" element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }>
           <Route index element={<Navigate to="/dashboard" />} />
           <Route path="dashboard" element={<Dashboard />} />
-          <Route path="stores" element={<Stores />} />
-          <Route path="stores/new" element={<Stores />} />
-          <Route path="stores/:id/edit" element={<Stores />} />
-          <Route path="operational-stores" element={<OperationalStores />} />
-          <Route path="operational-stores/new" element={<OperationalStores />} />
-          <Route path="operational-stores/:id/edit" element={<OperationalStores />} />
-          <Route path="spotline-start" element={<SpotlineStartSettings />} />
-          <Route path="demo" element={<DemoSystem />} />
-          <Route path="demo-system" element={<DemoSystem />} />
-          <Route path="live-system" element={<LiveSystem />} />
-          <Route path="analytics" element={<Analytics />} />
-          <Route path="recommendations" element={<Recommendations />} />
-          <Route path="recommendations/:storeId" element={<RecommendationSettings />} />
+          <Route path="curation" element={<SpotCuration />} />
+          <Route path="spots" element={<SpotManagement />} />
+          <Route path="routes/new" element={<RouteBuilder />} />
+          <Route path="routes" element={<RouteManagement />} />
+          <Route path="partners" element={<PartnerManagement />} />
+          <Route path="partners/new" element={<PartnerRegistration />} />
+          <Route path="partners/:id" element={<PartnerDetail />} />
           <Route path="admins" element={<Admins />} />
-          <Route path="system-settings" element={<SystemSettings />} />
         </Route>
       </Routes>
     </AuthProvider>
