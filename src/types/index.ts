@@ -88,6 +88,10 @@ export interface Store {
     isActive: boolean;
   };
   isActive: boolean;
+  recommendationCount?: number; // 추천 개수
+  stats?: {
+    monthlyScans?: number;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -103,6 +107,84 @@ export interface Recommendation {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+// 추천 관리 시스템 타입들
+export interface RecommendationCategory {
+  value: string;
+  label: string;
+  description: string;
+}
+
+export interface NearbyStore {
+  id: string;
+  name: string;
+  category: string;
+  shortDescription: string;
+  address: string;
+  area: string;
+  representativeImage: string;
+  distance: number;
+  walkingTime: number;
+  isAlreadyConnected: boolean;
+  suggestedCategories: string[];
+  matchType: "distance" | "area";
+}
+
+export interface ExistingRecommendation {
+  id: string;
+  toStore: {
+    id: string;
+    name: string;
+    category: string;
+    representativeImage?: string;
+    location: {
+      address: string;
+      area: string;
+    };
+  };
+  category: string;
+  priority: number;
+  description?: string;
+  distance?: number;
+  walkingTime?: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface NearbyStoresResponse {
+  currentStore: {
+    id: string;
+    name: string;
+    category: string;
+    address: string;
+    area: string;
+    shortDescription: string;
+  };
+  nearbyStores: NearbyStore[];
+  sameAreaStores: NearbyStore[];
+  existingRecommendations: ExistingRecommendation[];
+}
+
+export interface SelectedRecommendation {
+  toStoreId: string;
+  category: string;
+  priority: number;
+  description?: string;
+}
+
+export interface RecommendationStats {
+  totalRecommendations: number;
+  activeRecommendations: number;
+  inactiveRecommendations: number;
+  categoryStats: Array<{
+    _id: string;
+    count: number;
+  }>;
+  topStores: Array<{
+    storeName: string;
+    count: number;
+  }>;
 }
 
 export interface Admin {

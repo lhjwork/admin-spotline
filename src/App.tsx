@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import Stores from "./pages/Stores";
 import OperationalStores from "./pages/OperationalStores";
 import SpotlineStartSettings from "./pages/SpotlineStartSettings";
 import DemoSystem from "./pages/DemoSystem";
@@ -11,6 +12,7 @@ import Analytics from "./pages/Analytics";
 import SystemSettings from "./pages/SystemSettings";
 import Admins from "./pages/Admins";
 import Recommendations from "./pages/Recommendations";
+import RecommendationSettings from "./pages/RecommendationSettings";
 import { ReactNode } from "react";
 
 interface ProtectedRouteProps {
@@ -27,16 +29,19 @@ function App() {
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/" element={
-          <ProtectedRoute>
-            <Layout />
-          </ProtectedRoute>
-        }>
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Navigate to="/dashboard" />} />
           <Route path="dashboard" element={<Dashboard />} />
-          <Route path="stores" element={<OperationalStores />} />
-          <Route path="stores/new" element={<OperationalStores />} />
-          <Route path="stores/:id/edit" element={<OperationalStores />} />
+          <Route path="stores" element={<Stores />} />
+          <Route path="stores/new" element={<Stores />} />
+          <Route path="stores/:id/edit" element={<Stores />} />
           <Route path="operational-stores" element={<OperationalStores />} />
           <Route path="operational-stores/new" element={<OperationalStores />} />
           <Route path="operational-stores/:id/edit" element={<OperationalStores />} />
@@ -46,6 +51,7 @@ function App() {
           <Route path="live-system" element={<LiveSystem />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="recommendations" element={<Recommendations />} />
+          <Route path="recommendations/:storeId" element={<RecommendationSettings />} />
           <Route path="admins" element={<Admins />} />
           <Route path="system-settings" element={<SystemSettings />} />
         </Route>

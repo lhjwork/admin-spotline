@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "react-query";
+import { useNavigate } from "react-router-dom";
 import { storeAPI } from "../services/api";
-import { Search, Filter, MoreVertical, Eye, Edit, Trash2, ToggleLeft, ToggleRight, Plus, CheckCircle } from "lucide-react";
+import { Search, Filter, MoreVertical, Eye, Edit, Trash2, ToggleLeft, ToggleRight, Plus, CheckCircle, Settings } from "lucide-react";
 import StoreFormModal from "../components/StoreFormModal";
 import { formatDateKST } from "../utils/dateUtils";
 
@@ -34,9 +35,10 @@ export default function Stores() {
   const [showModal, setShowModal] = useState(false);
   const [selectedStore, setSelectedStore] = useState(null);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data, isLoading, error } = useQuery(["stores", filters], () => storeAPI.getStores(filters), {
-    select: (response) => response.data,
+    select: (response) => response.data.data,
     keepPreviousData: true,
   });
 
@@ -109,6 +111,10 @@ export default function Stores() {
     }
   };
 
+  const handleRecommendationSettings = (store) => {
+    navigate(`/recommendations/${store._id}`);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -121,7 +127,12 @@ export default function Stores() {
     return <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">데이터를 불러오는데 실패했습니다.</div>;
   }
 
-  const { stores, pagination } = data;
+  const stores = data?.stores || [];
+  const pagination = {
+    count: data?.totalCount || 0,
+    total: data?.totalPages || 1,
+    current: data?.currentPage || 1,
+  };
 
   return (
     <div className="space-y-6">
@@ -216,6 +227,7 @@ export default function Stores() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">매장 정보</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">카테고리</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">QR 코드</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">추천 개수</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">월간 스캔</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">등록일</th>
@@ -223,40 +235,60 @@ export default function Stores() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {stores.map((store) => (
-                <tr key={store._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{store.name}</div>
-                      <div className="text-sm text-gray-500">{store.location.address}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{store.category}</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{store.qrCode.id}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{store.stats?.monthlyScans || 0}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${store.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                      {store.isActive ? "활성" : "비활성"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDateKST(store.createdAt)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end space-x-2">
-                      <button onClick={() => handleEditStore(store)} className="text-blue-600 hover:text-blue-900" title="수정">
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button onClick={() => handleToggleStatus(store)} className="text-blue-600 hover:text-blue-900" title={store.isActive ? "비활성화" : "활성화"}>
-                        {store.isActive ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
-                      </button>
-                      <button onClick={() => handleDelete(store)} className="text-red-600 hover:text-red-900" title="삭제">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
+              {stores && stores.length > 0 ? (
+                stores.map((store) => (
+                  <tr key={store._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{store.name}</div>
+                        <div className="text-sm text-gray-500">{store.location.address}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{store.category}</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{store.qrCode.id}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-900">{store.recommendationCount || 0}개</span>
+                        <button
+                          onClick={() => handleRecommendationSettings(store)}
+                          className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100"
+                        >
+                          <Settings className="h-3 w-3 mr-1" />
+                          추천 설정
+                        </button>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{store.stats?.monthlyScans || 0}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${store.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                        {store.isActive ? "활성" : "비활성"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDateKST(store.createdAt)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end space-x-2">
+                        <button onClick={() => handleEditStore(store)} className="text-blue-600 hover:text-blue-900" title="수정">
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => handleToggleStatus(store)} className="text-blue-600 hover:text-blue-900" title={store.isActive ? "비활성화" : "활성화"}>
+                          {store.isActive ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+                        </button>
+                        <button onClick={() => handleDelete(store)} className="text-red-600 hover:text-red-900" title="삭제">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                    등록된 매장이 없습니다.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
@@ -322,6 +354,7 @@ export default function Stores() {
         onSubmit={handleSubmitStore}
         store={selectedStore}
         loading={createMutation.isLoading || updateMutation.isLoading}
+        onRefreshStore={() => queryClient.invalidateQueries(["stores"])}
       />
     </div>
   );
