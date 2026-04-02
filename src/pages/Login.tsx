@@ -50,13 +50,13 @@ export default function Login() {
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                이메일
+                아이디
               </label>
               <input
-                {...register("email", { required: "이메일을 입력하세요" })}
-                type="email"
+                {...register("email", { required: "아이디를 입력하세요" })}
+                type="text"
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                placeholder="admin@spotline.kr"
+                placeholder="admin"
               />
               {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
             </div>

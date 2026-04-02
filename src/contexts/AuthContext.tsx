@@ -60,6 +60,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
+    const localUsername = import.meta.env["VITE_ADMIN_USERNAME"];
+    const localPassword = import.meta.env["VITE_ADMIN_PASSWORD"];
+
+    if (localUsername && email === localUsername && password === localPassword) {
+      const localAdmin: Admin = {
+        id: "local-admin",
+        username: localUsername,
+        email: `${localUsername}@local`,
+        role: "super_admin",
+        isActive: true,
+      };
+      setAdmin(localAdmin);
+      setIsAuthenticated(true);
+      return { success: true };
+    }
+
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       return { success: false, error: error.message };
