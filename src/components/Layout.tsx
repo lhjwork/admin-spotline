@@ -2,11 +2,13 @@ import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
   LayoutDashboard, Search, MapPin, Route, List,
-  Users, LogOut, Menu, X, Store, LucideIcon,
+  Users, LogOut, Menu, X, Store, Shield, LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
+import { useQuery } from "react-query";
 import type { AdminRole } from "../types";
 import { hasMinRole, getRoleLabel } from "../utils/roles";
+import { reportAPI } from "../services/v2/reportAPI";
 
 interface NavigationItem {
   name: string;
@@ -29,10 +31,11 @@ const navigation: NavigationItem[] = [
   { name: "파트너 관리", href: "/partners", icon: Store, section: "partner", minRole: "admin" },
 
   // 시스템 섹션
+  { name: "모더레이션", href: "/moderation", icon: Shield, section: "system", minRole: "admin" },
   { name: "어드민 관리", href: "/admins", icon: Users, section: "system", minRole: "super_admin" },
 ];
 
-function NavLink({ item, onClick }: { item: NavigationItem; onClick?: () => void }) {
+function NavLink({ item, onClick, badge }: { item: NavigationItem; onClick?: () => void; badge?: number }) {
   const location = useLocation();
   const Icon = item.icon;
   const isActive =
@@ -49,11 +52,16 @@ function NavLink({ item, onClick }: { item: NavigationItem; onClick?: () => void
     >
       <Icon className="mr-3 h-5 w-5" />
       {item.name}
+      {badge != null && badge > 0 && (
+        <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs text-white">
+          {badge}
+        </span>
+      )}
     </Link>
   );
 }
 
-function NavSection({ title, section, onClick }: { title: string; section: string; onClick?: () => void }) {
+function NavSection({ title, section, onClick, badgeMap }: { title: string; section: string; onClick?: () => void; badgeMap?: Record<string, number> }) {
   const { admin } = useAuth();
   const items = navigation.filter((item) => {
     if (item.section !== section) return false;
@@ -68,7 +76,7 @@ function NavSection({ title, section, onClick }: { title: string; section: strin
       <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</h3>
       <div className="mt-2 space-y-1">
         {items.map((item) => (
-          <NavLink key={item.name} item={item} onClick={onClick} />
+          <NavLink key={item.name} item={item} onClick={onClick} badge={badgeMap?.[item.href]} />
         ))}
       </div>
     </div>
@@ -79,6 +87,15 @@ export default function Layout() {
   const { admin, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const close = () => setSidebarOpen(false);
+
+  const { data: pendingCount } = useQuery({
+    queryKey: ["reports-pending-count"],
+    queryFn: () => reportAPI.getPendingCount(),
+    select: (res) => res.data.count,
+    refetchInterval: 60000,
+  });
+
+  const systemBadgeMap = pendingCount ? { "/moderation": pendingCount } : {};
 
   const sidebarContent = (onNav?: () => void) => (
     <>
@@ -91,7 +108,7 @@ export default function Layout() {
       ))}
       <NavSection title="큐레이션" section="curation" onClick={onNav} />
       <NavSection title="파트너" section="partner" onClick={onNav} />
-      <NavSection title="시스템" section="system" onClick={onNav} />
+      <NavSection title="시스템" section="system" onClick={onNav} badgeMap={systemBadgeMap} />
     </>
   );
 

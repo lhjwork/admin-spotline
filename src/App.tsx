@@ -12,6 +12,7 @@ import PartnerManagement from "./pages/PartnerManagement";
 import PartnerRegistration from "./pages/PartnerRegistration";
 import PartnerDetail from "./pages/PartnerDetail";
 import PartnerEdit from "./pages/PartnerEdit";
+import ModerationQueue from "./pages/ModerationQueue";
 import { ReactNode } from "react";
 import type { AdminRole } from "./types";
 import { hasMinRole } from "./utils/roles";
@@ -72,6 +73,9 @@ function App() {
           } />
           <Route path="partners/:id" element={
             <ProtectedRoute requiredRole="admin"><PartnerDetail /></ProtectedRoute>
+          } />
+          <Route path="moderation" element={
+            <ProtectedRoute requiredRole="admin"><ModerationQueue /></ProtectedRoute>
           } />
           <Route path="admins" element={
             <ProtectedRoute requiredRole="super_admin"><Admins /></ProtectedRoute>
