@@ -11,9 +11,11 @@ import {
 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 
+import { getRoleLabel } from '../utils/roles'
+
 const ROLES = [
   { value: 'admin', label: '관리자' },
-  { value: 'moderator', label: '모더레이터' }
+  { value: 'moderator', label: '모더레이터' },
 ]
 
 interface CreateAdminModalProps {
@@ -165,13 +167,8 @@ export default function Admins() {
     queryClient.invalidateQueries('admins')
   }
 
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'super_admin': return '슈퍼 관리자'
-      case 'admin': return '관리자'
-      case 'moderator': return '모더레이터'
-      default: return role
-    }
+  const getAdminRoleLabel = (role: string) => {
+    return getRoleLabel(role as any)
   }
 
   const getRoleBadgeColor = (role: string) => {
@@ -181,14 +178,6 @@ export default function Admins() {
       case 'moderator': return 'bg-green-100 text-green-800'
       default: return 'bg-gray-100 text-gray-800'
     }
-  }
-
-  if (currentAdmin?.role !== 'super_admin') {
-    return (
-      <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded">
-        이 페이지에 접근할 권한이 없습니다.
-      </div>
-    )
   }
 
   if (isLoading) {
@@ -282,7 +271,7 @@ export default function Admins() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(admin.role)}`}>
                         <Shield className="h-3 w-3 mr-1" />
-                        {getRoleLabel(admin.role)}
+                        {getAdminRoleLabel(admin.role)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

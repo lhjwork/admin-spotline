@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "../lib/supabaseClient";
-import type { Admin } from "../types";
+import type { Admin, AdminRole } from "../types";
 import type { Session } from "@supabase/supabase-js";
+import { toSafeRole } from "../utils/roles";
 
 interface AuthContextType {
   admin: Admin | null;
@@ -21,11 +22,13 @@ export function useAuth(): AuthContextType {
 
 function sessionToAdmin(session: Session): Admin {
   const user = session.user;
+  const role = toSafeRole(user.app_metadata?.role ?? user.user_metadata?.role);
+
   return {
     id: user.id,
     username: user.email?.split("@")[0] ?? "admin",
     email: user.email ?? "",
-    role: "super_admin",
+    role,
     isActive: true,
   };
 }
@@ -64,11 +67,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const localPassword = import.meta.env["VITE_ADMIN_PASSWORD"];
 
     if (localUsername && email === localUsername && password === localPassword) {
+      const localRole = toSafeRole(import.meta.env["VITE_ADMIN_ROLE"] ?? "super_admin");
       const localAdmin: Admin = {
         id: "local-admin",
         username: localUsername,
         email: `${localUsername}@local`,
-        role: "super_admin",
+        role: localRole,
         isActive: true,
       };
       setAdmin(localAdmin);

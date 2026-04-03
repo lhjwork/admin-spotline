@@ -5,12 +5,15 @@ import {
   Users, LogOut, Menu, X, Store, LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
+import type { AdminRole } from "../types";
+import { hasMinRole, getRoleLabel } from "../utils/roles";
 
 interface NavigationItem {
   name: string;
   href: string;
   icon: LucideIcon;
   section?: string;
+  minRole?: AdminRole;
 }
 
 const navigation: NavigationItem[] = [
@@ -23,10 +26,10 @@ const navigation: NavigationItem[] = [
   { name: "Route 관리", href: "/routes", icon: List, section: "curation" },
 
   // 파트너 섹션
-  { name: "파트너 관리", href: "/partners", icon: Store, section: "partner" },
+  { name: "파트너 관리", href: "/partners", icon: Store, section: "partner", minRole: "admin" },
 
   // 시스템 섹션
-  { name: "어드민 관리", href: "/admins", icon: Users, section: "system" },
+  { name: "어드민 관리", href: "/admins", icon: Users, section: "system", minRole: "super_admin" },
 ];
 
 function NavLink({ item, onClick }: { item: NavigationItem; onClick?: () => void }) {
@@ -51,7 +54,15 @@ function NavLink({ item, onClick }: { item: NavigationItem; onClick?: () => void
 }
 
 function NavSection({ title, section, onClick }: { title: string; section: string; onClick?: () => void }) {
-  const items = navigation.filter((item) => item.section === section);
+  const { admin } = useAuth();
+  const items = navigation.filter((item) => {
+    if (item.section !== section) return false;
+    if (item.minRole && admin) return hasMinRole(admin.role, item.minRole);
+    return true;
+  });
+
+  if (items.length === 0) return null;
+
   return (
     <div className="pt-4">
       <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</h3>
@@ -71,7 +82,11 @@ export default function Layout() {
 
   const sidebarContent = (onNav?: () => void) => (
     <>
-      {navigation.filter((i) => !i.section).map((item) => (
+      {navigation.filter((i) => {
+        if (i.section) return false;
+        if (i.minRole && admin) return hasMinRole(admin.role, i.minRole);
+        return true;
+      }).map((item) => (
         <NavLink key={item.name} item={item} onClick={onNav} />
       ))}
       <NavSection title="큐레이션" section="curation" onClick={onNav} />
@@ -113,7 +128,7 @@ export default function Layout() {
             </button>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-700">
-                {admin?.username} ({admin?.role})
+                {admin?.username} ({admin ? getRoleLabel(admin.role) : ""})
               </span>
               <button onClick={logout} className="flex items-center space-x-2 text-sm text-gray-500 hover:text-gray-700">
                 <LogOut className="h-4 w-4" />

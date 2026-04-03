@@ -187,11 +187,13 @@ export interface RecommendationStats {
   }>;
 }
 
+export type AdminRole = "super_admin" | "admin" | "moderator";
+
 export interface Admin {
   id: string; // VERSION002에서 id로 변경
   username: string;
   email: string;
-  role: "admin" | "super_admin";
+  role: AdminRole;
   isActive?: boolean;
   lastLogin?: string;
   createdAt?: string;
