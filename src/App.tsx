@@ -11,6 +11,7 @@ import Admins from "./pages/Admins";
 import PartnerManagement from "./pages/PartnerManagement";
 import PartnerRegistration from "./pages/PartnerRegistration";
 import PartnerDetail from "./pages/PartnerDetail";
+import PartnerEdit from "./pages/PartnerEdit";
 import { ReactNode } from "react";
 import type { AdminRole } from "./types";
 import { hasMinRole } from "./utils/roles";
@@ -65,6 +66,9 @@ function App() {
           } />
           <Route path="partners/new" element={
             <ProtectedRoute requiredRole="admin"><PartnerRegistration /></ProtectedRoute>
+          } />
+          <Route path="partners/:id/edit" element={
+            <ProtectedRoute requiredRole="admin"><PartnerEdit /></ProtectedRoute>
           } />
           <Route path="partners/:id" element={
             <ProtectedRoute requiredRole="admin"><PartnerDetail /></ProtectedRoute>

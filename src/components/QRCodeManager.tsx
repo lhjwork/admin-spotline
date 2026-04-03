@@ -31,6 +31,13 @@ export default function QRCodeManager({ partnerId, qrCodes }: QRCodeManagerProps
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (qrCodeId: string) => partnerAPI.deleteQRCode(partnerId, qrCodeId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["partner", partnerId] });
+    },
+  });
+
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newLabel.trim()) return;
@@ -98,6 +105,7 @@ export default function QRCodeManager({ partnerId, qrCodes }: QRCodeManagerProps
               key={qr.id}
               qrCode={qr}
               onDeactivate={(id) => deactivateMutation.mutate(id)}
+              onDelete={(id) => deleteMutation.mutate(id)}
             />
           ))}
         </div>

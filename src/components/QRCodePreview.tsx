@@ -8,9 +8,10 @@ const QR_BASE_URL = "https://spotline.kr/qr";
 interface QRCodePreviewProps {
   qrCode: PartnerQRCodeResponse;
   onDeactivate?: (qrCodeId: string) => void;
+  onDelete?: (qrCodeId: string) => void;
 }
 
-export default function QRCodePreview({ qrCode, onDeactivate }: QRCodePreviewProps) {
+export default function QRCodePreview({ qrCode, onDeactivate, onDelete }: QRCodePreviewProps) {
   const svgRef = useRef<HTMLDivElement>(null);
   const qrUrl = `${QR_BASE_URL}/${qrCode.qrId}`;
 
@@ -94,6 +95,18 @@ export default function QRCodePreview({ qrCode, onDeactivate }: QRCodePreviewPro
               className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50"
             >
               비활성화
+            </button>
+          )}
+          {!qrCode.isActive && onDelete && (
+            <button
+              onClick={() => {
+                if (window.confirm("QR 코드를 삭제하시겠습니까?")) {
+                  onDelete(qrCode.id);
+                }
+              }}
+              className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+            >
+              삭제
             </button>
           )}
         </div>

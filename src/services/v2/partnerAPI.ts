@@ -46,6 +46,9 @@ export const partnerAPI = {
   deactivateQRCode: (partnerId: string, qrCodeId: string) =>
     apiClient.patch(`/api/v2/admin/partners/${partnerId}/qr-codes/${qrCodeId}`, { isActive: false }),
 
+  deleteQRCode: (partnerId: string, qrCodeId: string) =>
+    apiClient.delete(`/api/v2/admin/partners/${partnerId}/qr-codes/${qrCodeId}`),
+
   // 분석
   getAnalytics: (partnerId: string, period: string = "30d") =>
     apiClient.get<PartnerAnalyticsResponse>(`/api/v2/admin/partners/${partnerId}/analytics`, {

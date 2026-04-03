@@ -2,46 +2,61 @@ import { useState } from "react";
 import { useQuery } from "react-query";
 import { Search, MapPin } from "lucide-react";
 import { spotAPI } from "../services/v2/spotAPI";
-import type { CreatePartnerRequest, PartnerTier, SpotDetailResponse } from "../types/v2";
+import type { CreatePartnerRequest, UpdatePartnerRequest, PartnerTier, PartnerDetailResponse, SpotDetailResponse } from "../types/v2";
 
 interface PartnerFormProps {
-  onSubmit: (data: CreatePartnerRequest) => void;
+  mode?: "create" | "edit";
+  initialData?: PartnerDetailResponse;
+  onSubmit: (data: CreatePartnerRequest | UpdatePartnerRequest) => void;
   isSubmitting: boolean;
   error: string | null;
 }
 
-export default function PartnerForm({ onSubmit, isSubmitting, error }: PartnerFormProps) {
+export default function PartnerForm({ mode = "create", initialData, onSubmit, isSubmitting, error }: PartnerFormProps) {
+  const isEdit = mode === "edit";
+
   const [spotSearch, setSpotSearch] = useState("");
   const [selectedSpot, setSelectedSpot] = useState<SpotDetailResponse | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const [tier, setTier] = useState<PartnerTier>("BASIC");
-  const [brandColor, setBrandColor] = useState("#6366F1");
-  const [benefitText, setBenefitText] = useState("");
+  const [tier, setTier] = useState<PartnerTier>(initialData?.tier ?? "BASIC");
+  const [brandColor, setBrandColor] = useState(initialData?.brandColor ?? "#6366F1");
+  const [benefitText, setBenefitText] = useState(initialData?.benefitText ?? "");
   const [contractStartDate, setContractStartDate] = useState(
-    new Date().toISOString().split("T")[0]
+    initialData?.contractStartDate ?? new Date().toISOString().split("T")[0]
   );
-  const [note, setNote] = useState("");
+  const [contractEndDate, setContractEndDate] = useState(initialData?.contractEndDate ?? "");
+  const [note, setNote] = useState(initialData?.note ?? "");
 
   const { data: spotsData } = useQuery({
     queryKey: ["spots-search", spotSearch],
     queryFn: () => spotAPI.getList({ page: 1, size: 10 }),
     select: (res) => res.data.content,
-    enabled: spotSearch.length > 0,
+    enabled: !isEdit && spotSearch.length > 0,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedSpot) return;
+    if (!isEdit && !selectedSpot) return;
 
-    onSubmit({
-      spotId: selectedSpot.id,
-      tier,
-      brandColor,
-      benefitText: benefitText || undefined,
-      contractStartDate,
-      note: note || undefined,
-    });
+    if (isEdit) {
+      onSubmit({
+        tier,
+        brandColor,
+        benefitText: benefitText || undefined,
+        contractEndDate: contractEndDate || undefined,
+        note: note || undefined,
+      } as UpdatePartnerRequest);
+    } else {
+      onSubmit({
+        spotId: selectedSpot!.id,
+        tier,
+        brandColor,
+        benefitText: benefitText || undefined,
+        contractStartDate,
+        note: note || undefined,
+      } as CreatePartnerRequest);
+    }
   };
 
   return (
@@ -53,7 +68,16 @@ export default function PartnerForm({ onSubmit, isSubmitting, error }: PartnerFo
       {/* Spot 선택 */}
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">Spot 선택 *</label>
-        {selectedSpot ? (
+        {isEdit ? (
+          <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <MapPin className="h-5 w-5 text-gray-400" />
+            <div className="flex-1">
+              <p className="font-medium text-gray-900">{initialData?.spotTitle}</p>
+              <p className="text-sm text-gray-500">{initialData?.spotArea}</p>
+            </div>
+            <span className="text-xs text-gray-400">변경 불가</span>
+          </div>
+        ) : selectedSpot ? (
           <div className="flex items-center gap-3 rounded-lg border border-primary-200 bg-primary-50 p-3">
             <MapPin className="h-5 w-5 text-primary-600" />
             <div className="flex-1">
@@ -112,9 +136,23 @@ export default function PartnerForm({ onSubmit, isSubmitting, error }: PartnerFo
           value={contractStartDate}
           onChange={(e) => setContractStartDate(e.target.value)}
           required
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          disabled={isEdit}
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-50 disabled:text-gray-500"
         />
       </div>
+
+      {/* 계약 종료일 */}
+      {isEdit && (
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">계약 종료일</label>
+          <input
+            type="date"
+            value={contractEndDate}
+            onChange={(e) => setContractEndDate(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          />
+        </div>
+      )}
 
       {/* 파트너 등급 */}
       <div>
@@ -182,10 +220,10 @@ export default function PartnerForm({ onSubmit, isSubmitting, error }: PartnerFo
       {/* Submit */}
       <button
         type="submit"
-        disabled={!selectedSpot || isSubmitting}
+        disabled={(!isEdit && !selectedSpot) || isSubmitting}
         className="w-full rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
       >
-        {isSubmitting ? "등록 중..." : "파트너 등록"}
+        {isSubmitting ? (isEdit ? "저장 중..." : "등록 중...") : (isEdit ? "수정 저장" : "파트너 등록")}
       </button>
     </form>
   );
