@@ -1,20 +1,20 @@
-// @ts-nocheck
+import React from 'react'
 import {
   LineChart,
   Line,
-  AreaChart, 
-  Area, 
-  BarChart, 
-  Bar, 
-  PieChart, 
-  Pie, 
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
   Cell,
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
 } from 'recharts'
 
 const COLORS = [
@@ -28,16 +28,104 @@ const COLORS = [
   '#F97316', // orange-500
 ]
 
+interface ChartLine {
+  key: string;
+  name: string;
+  color?: string;
+}
+
+interface ChartArea {
+  key: string;
+  name: string;
+  color?: string;
+}
+
+interface ChartBar {
+  key?: string;
+  dataKey?: string;
+  name?: string;
+  color?: string;
+}
+
+type ValueFormatter = (value: number) => string;
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{ color: string; name: string; value: number }>;
+  label?: string;
+  formatter?: ValueFormatter | null;
+}
+
+interface LineChartProps {
+  data: Record<string, unknown>[];
+  xKey: string;
+  lines: ChartLine[];
+  height?: number;
+  formatter?: ValueFormatter | null;
+  showGrid?: boolean;
+  showLegend?: boolean;
+}
+
+interface AreaChartProps {
+  data: Record<string, unknown>[];
+  xKey: string;
+  areas: ChartArea[];
+  height?: number;
+  formatter?: ValueFormatter | null;
+  showGrid?: boolean;
+  showLegend?: boolean;
+  stacked?: boolean;
+}
+
+interface BarChartProps {
+  data: Record<string, unknown>[];
+  xKey: string;
+  bars: ChartBar[];
+  height?: number;
+  formatter?: ValueFormatter | null;
+  showGrid?: boolean;
+  showLegend?: boolean;
+  layout?: 'vertical' | 'horizontal';
+}
+
+interface PieChartProps {
+  data: Record<string, unknown>[];
+  dataKey: string;
+  nameKey: string;
+  height?: number;
+  formatter?: ValueFormatter | null;
+  showLegend?: boolean;
+  innerRadius?: number;
+  outerRadius?: number;
+}
+
+interface ChartCardProps {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  className?: string;
+  actions?: React.ReactNode;
+}
+
+interface MetricCardProps {
+  title: string;
+  value: string | number;
+  change?: string;
+  changeType?: 'positive' | 'negative' | 'neutral';
+  icon?: React.ComponentType<{ className?: string }>;
+  className?: string;
+}
+
 // 커스텀 툴팁 컴포넌트
-const CustomTooltip = ({ active, payload, label, formatter }) => {
+const CustomTooltip = ({ active, payload, label, formatter }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
         <p className="text-sm font-medium text-gray-900 mb-2">{label}</p>
         {payload.map((entry, index) => (
           <div key={index} className="flex items-center space-x-2 text-sm">
-            <div 
-              className="w-3 h-3 rounded-full" 
+            <div
+              className="w-3 h-3 rounded-full"
               style={{ backgroundColor: entry.color }}
             />
             <span className="text-gray-600">{entry.name}:</span>
@@ -53,25 +141,25 @@ const CustomTooltip = ({ active, payload, label, formatter }) => {
 }
 
 // 라인 차트
-export function LineChartComponent({ 
-  data, 
-  xKey, 
-  lines, 
+export function LineChartComponent({
+  data,
+  xKey,
+  lines,
   height = 300,
   formatter = null,
   showGrid = true,
-  showLegend = true 
-}) {
+  showLegend = true
+}: LineChartProps) {
   return (
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
         {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />}
-        <XAxis 
-          dataKey={xKey} 
+        <XAxis
+          dataKey={xKey}
           tick={{ fontSize: 12 }}
           stroke="#6b7280"
         />
-        <YAxis 
+        <YAxis
           tick={{ fontSize: 12 }}
           stroke="#6b7280"
         />
@@ -95,26 +183,26 @@ export function LineChartComponent({
 }
 
 // 영역 차트
-export function AreaChartComponent({ 
-  data, 
-  xKey, 
-  areas, 
+export function AreaChartComponent({
+  data,
+  xKey,
+  areas,
   height = 300,
   formatter = null,
   showGrid = true,
   showLegend = true,
-  stacked = false 
-}) {
+  stacked = false
+}: AreaChartProps) {
   return (
     <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
         {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />}
-        <XAxis 
-          dataKey={xKey} 
+        <XAxis
+          dataKey={xKey}
           tick={{ fontSize: 12 }}
           stroke="#6b7280"
         />
-        <YAxis 
+        <YAxis
           tick={{ fontSize: 12 }}
           stroke="#6b7280"
         />
@@ -138,31 +226,31 @@ export function AreaChartComponent({
 }
 
 // 바 차트
-export function BarChartComponent({ 
-  data, 
-  xKey, 
-  bars, 
+export function BarChartComponent({
+  data,
+  xKey,
+  bars,
   height = 300,
   formatter = null,
   showGrid = true,
   showLegend = true,
-  layout = 'vertical' // 'vertical' or 'horizontal'
-}) {
+  layout = 'vertical'
+}: BarChartProps) {
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart 
-        data={data} 
+      <BarChart
+        data={data}
         layout={layout}
         margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
       >
         {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />}
-        <XAxis 
+        <XAxis
           type={layout === 'vertical' ? 'number' : 'category'}
           dataKey={layout === 'vertical' ? undefined : xKey}
           tick={{ fontSize: 12 }}
           stroke="#6b7280"
         />
-        <YAxis 
+        <YAxis
           type={layout === 'vertical' ? 'category' : 'number'}
           dataKey={layout === 'vertical' ? xKey : undefined}
           tick={{ fontSize: 12 }}
@@ -171,31 +259,34 @@ export function BarChartComponent({
         />
         <Tooltip content={<CustomTooltip formatter={formatter} />} />
         {showLegend && <Legend />}
-        {bars.map((bar, index) => (
-          <Bar
-            key={bar.key}
-            dataKey={bar.key}
-            fill={bar.color || COLORS[index % COLORS.length]}
-            name={bar.name}
-            radius={[2, 2, 0, 0]}
-          />
-        ))}
+        {bars.map((bar, index) => {
+          const barKey = bar.dataKey || bar.key || '';
+          return (
+            <Bar
+              key={barKey}
+              dataKey={barKey}
+              fill={bar.color || COLORS[index % COLORS.length]}
+              name={bar.name || barKey}
+              radius={[2, 2, 0, 0]}
+            />
+          );
+        })}
       </BarChart>
     </ResponsiveContainer>
   )
 }
 
 // 파이 차트
-export function PieChartComponent({ 
-  data, 
-  dataKey, 
-  nameKey, 
+export function PieChartComponent({
+  data,
+  dataKey,
+  nameKey,
   height = 300,
   formatter = null,
   showLegend = true,
   innerRadius = 0,
-  outerRadius = 80 
-}) {
+  outerRadius = 80
+}: PieChartProps) {
   return (
     <ResponsiveContainer width="100%" height={height}>
       <PieChart>
@@ -209,7 +300,7 @@ export function PieChartComponent({
           dataKey={dataKey}
           nameKey={nameKey}
         >
-          {data.map((entry, index) => (
+          {data.map((_entry, index) => (
             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
           ))}
         </Pie>
@@ -221,36 +312,42 @@ export function PieChartComponent({
 }
 
 // 도넛 차트 (파이 차트의 변형)
-export function DonutChartComponent(props) {
+export function DonutChartComponent(props: Omit<PieChartProps, 'innerRadius'>) {
   return <PieChartComponent {...props} innerRadius={40} />
 }
 
 // 통합 차트 컴포넌트
-export default function Chart({ type, ...props }) {
+type ChartProps =
+  | ({ type: 'line' } & LineChartProps)
+  | ({ type: 'area' } & AreaChartProps)
+  | ({ type: 'bar' } & BarChartProps)
+  | ({ type: 'pie' } & PieChartProps)
+  | ({ type: 'donut' } & Omit<PieChartProps, 'innerRadius'>);
+
+export default function Chart(props: ChartProps) {
+  const { type, ...rest } = props;
   switch (type) {
     case 'line':
-      return <LineChartComponent {...props} />
+      return <LineChartComponent {...rest as LineChartProps} />
     case 'area':
-      return <AreaChartComponent {...props} />
+      return <AreaChartComponent {...rest as AreaChartProps} />
     case 'bar':
-      return <BarChartComponent {...props} />
+      return <BarChartComponent {...rest as BarChartProps} />
     case 'pie':
-      return <PieChartComponent {...props} />
+      return <PieChartComponent {...rest as PieChartProps} />
     case 'donut':
-      return <DonutChartComponent {...props} />
-    default:
-      return <LineChartComponent {...props} />
+      return <DonutChartComponent {...rest as Omit<PieChartProps, 'innerRadius'>} />
   }
 }
 
 // 차트 래퍼 컴포넌트 (제목과 함께)
-export function ChartCard({ 
-  title, 
-  subtitle, 
-  children, 
+export function ChartCard({
+  title,
+  subtitle,
+  children,
   className = '',
-  actions = null 
-}) {
+  actions = null
+}: ChartCardProps) {
   return (
     <div className={`bg-white rounded-lg shadow p-6 ${className}`}>
       <div className="flex items-center justify-between mb-4">
@@ -272,14 +369,14 @@ export function ChartCard({
 }
 
 // 메트릭 카드 컴포넌트
-export function MetricCard({ 
-  title, 
-  value, 
-  change, 
-  changeType = 'neutral', // 'positive', 'negative', 'neutral'
+export function MetricCard({
+  title,
+  value,
+  change,
+  changeType = 'neutral',
   icon: Icon,
-  className = '' 
-}) {
+  className = ''
+}: MetricCardProps) {
   const changeColors = {
     positive: 'text-green-600 bg-green-100',
     negative: 'text-red-600 bg-red-100',

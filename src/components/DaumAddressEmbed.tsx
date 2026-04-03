@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect, useRef } from 'react';
 import { Search, MapPin, X, Map, Edit3, Check, RotateCcw } from 'lucide-react';
 
@@ -33,59 +32,26 @@ interface DaumAddressEmbedProps {
   initialCoordinates?: Coordinates | null;
 }
 
-// 전역 타입 선언
-declare global {
-  interface Window {
-    daum: {
-      Postcode: new (options: {
-        oncomplete: (data: any) => void;
-        width: string;
-        height: string;
-      }) => {
-        embed: (container: HTMLElement) => void;
-      };
-    };
-    kakao: {
-      maps: {
-        load: (callback: () => void) => void;
-        Map: new (container: HTMLElement, options: any) => any;
-        LatLng: new (lat: number, lng: number) => any;
-        Marker: new (options: any) => any;
-        InfoWindow: new (options: any) => any;
-        event: {
-          addListener: (target: any, type: string, handler: (event: any) => void) => void;
-        };
-        services: {
-          Geocoder: new () => any;
-          Status: {
-            OK: any;
-          };
-        };
-      };
-    };
-  }
-}
-
-export default function DaumAddressEmbed({ 
-  onAddressSelect, 
-  initialAddress = '', 
+export default function DaumAddressEmbed({
+  onAddressSelect,
+  initialAddress = '',
   initialDetailAddress = '',
-  initialCoordinates = null 
+  initialCoordinates = null
 }: DaumAddressEmbedProps) {
   const [address, setAddress] = useState<string>(initialAddress);
   const [detailAddress, setDetailAddress] = useState<string>(initialDetailAddress);
   const [coordinates, setCoordinates] = useState<Coordinates | null>(initialCoordinates);
-  const [addressData, setAddressData] = useState<AddressData | null>(null); // 주소 데이터 상태 추가
+  const [addressData, setAddressData] = useState<AddressData | null>(null);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [showMap, setShowMap] = useState<boolean>(false);
   const [mapLoaded, setMapLoaded] = useState<boolean>(false);
   const [isEditingLocation, setIsEditingLocation] = useState<boolean>(false);
   const [originalCoordinates, setOriginalCoordinates] = useState<Coordinates | null>(null);
-  
+
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<any>(null);
-  const markerInstance = useRef<any>(null);
+  const mapInstance = useRef<KakaoMap | null>(null);
+  const markerInstance = useRef<KakaoMarker | null>(null);
 
   useEffect(() => {
     setAddress(initialAddress);
@@ -96,17 +62,17 @@ export default function DaumAddressEmbed({
   // 상세 주소 변경 처리
   const handleDetailAddressChange = (value: string) => {
     setDetailAddress(value);
-    
+
     // 기본 주소가 있을 때만 부모 컴포넌트에 전달
     if (address && addressData) {
       const fullAddress = value ? `${address} ${value}` : address;
-      
+
       onAddressSelect({
         address,
         detailAddress: value,
         fullAddress,
         coordinates,
-        addressData // 기존 주소 데이터 유지
+        addressData
       });
     }
   };
@@ -130,7 +96,7 @@ export default function DaumAddressEmbed({
           if (window.kakao && window.kakao.maps) {
             clearInterval(checkInterval);
             resolve();
-          } else if (attempts >= 20) { // 10초 후 타임아웃
+          } else if (attempts >= 20) {
             clearInterval(checkInterval);
             reject(new Error('Kakao Maps SDK load timeout'));
           }
@@ -142,9 +108,8 @@ export default function DaumAddressEmbed({
       const script = document.createElement('script');
       script.type = 'text/javascript';
       script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=31cd8fd259bf2fd36efa05275dafaee3&libraries=services&autoload=false';
-      
+
       script.onload = () => {
-        // kakao.maps.load 호출
         if (window.kakao && window.kakao.maps && window.kakao.maps.load) {
           window.kakao.maps.load(() => {
             resolve();
@@ -153,11 +118,11 @@ export default function DaumAddressEmbed({
           reject(new Error('Kakao Maps load function not found'));
         }
       };
-      
+
       script.onerror = () => {
         reject(new Error('Failed to load Kakao Maps SDK'));
       };
-      
+
       document.head.appendChild(script);
     });
   };
@@ -167,7 +132,7 @@ export default function DaumAddressEmbed({
     try {
       await loadKakaoMapSDK();
       setMapLoaded(true);
-    } catch (error) {
+    } catch (_error) {
       // 3초 후 재시도
       setTimeout(() => {
         initializeKakaoMap();
@@ -182,39 +147,39 @@ export default function DaumAddressEmbed({
   // 카카오 지오코딩 함수
   const getCoordinatesFromAddress = async (address: string): Promise<Coordinates | null> => {
     const KAKAO_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY;
-    
+
     if (!KAKAO_API_KEY || KAKAO_API_KEY === 'YOUR_KAKAO_REST_API_KEY') {
       return null;
     }
 
     try {
       const url = `https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`;
-      
+
       const response = await fetch(url, {
         headers: {
           'Authorization': `KakaoAK ${KAKAO_API_KEY}`
         }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
-        
+
         if (data.documents && data.documents.length > 0) {
           const { x: lng, y: lat } = data.documents[0];
-          
+
           const coordinates = {
             lat: parseFloat(lat),
             lng: parseFloat(lng),
             source: 'kakao'
           };
-          
+
           return coordinates;
         }
       }
-    } catch (error: any) {
+    } catch (_error: unknown) {
       // 에러 발생 시 조용히 null 반환
     }
-    
+
     return null;
   };
 
@@ -240,14 +205,14 @@ export default function DaumAddressEmbed({
 
     // 마커 생성
     const markerPosition = new window.kakao.maps.LatLng(coords.lat, coords.lng);
-    
+
     if (markerInstance.current) {
       markerInstance.current.setMap(null);
     }
-    
+
     markerInstance.current = new window.kakao.maps.Marker({
       position: markerPosition,
-      draggable: isEditable // 편집 모드일 때만 드래그 가능
+      draggable: isEditable
     });
 
     markerInstance.current.setMap(mapInstance.current);
@@ -262,7 +227,7 @@ export default function DaumAddressEmbed({
             경도: ${coords.lng.toFixed(6)}<br>
             출처: ${coords.source || 'manual'}
           </div>
-          ${isEditable ? '<div style="font-size:11px; color:#007bff; margin-top:5px;">📍 마커를 드래그하거나 지도를 클릭해서 위치를 조정하세요</div>' : ''}
+          ${isEditable ? '<div style="font-size:11px; color:#007bff; margin-top:5px;">마커를 드래그하거나 지도를 클릭해서 위치를 조정하세요</div>' : ''}
         </div>
       `
     });
@@ -272,15 +237,15 @@ export default function DaumAddressEmbed({
     // 편집 모드일 때 마커 드래그 이벤트 추가
     if (isEditable) {
       window.kakao.maps.event.addListener(markerInstance.current, 'dragend', function() {
-        const markerPosition = markerInstance.current.getPosition();
-        const newCoords = {
+        const markerPosition = markerInstance.current!.getPosition();
+        const newCoords: Coordinates = {
           lat: markerPosition.getLat(),
           lng: markerPosition.getLng(),
           source: 'manual'
         };
-        
+
         setCoordinates(newCoords);
-        
+
         // 정보창 업데이트
         infoWindow.setContent(`
           <div style="padding:10px; min-width:200px;">
@@ -290,25 +255,25 @@ export default function DaumAddressEmbed({
               경도: ${newCoords.lng.toFixed(6)}<br>
               출처: 수동 조정
             </div>
-            <div style="font-size:11px; color:#007bff; margin-top:5px;">📍 마커를 드래그하거나 지도를 클릭해서 위치를 조정하세요</div>
+            <div style="font-size:11px; color:#007bff; margin-top:5px;">마커를 드래그하거나 지도를 클릭해서 위치를 조정하세요</div>
           </div>
         `);
       });
 
       // 지도 클릭 시 마커 이동
-      window.kakao.maps.event.addListener(mapInstance.current, 'click', function(mouseEvent: any) {
-        const latlng = mouseEvent.latLng;
-        const newCoords = {
+      window.kakao.maps.event.addListener(mapInstance.current, 'click', function(mouseEvent) {
+        const latlng = mouseEvent!.latLng;
+        const newCoords: Coordinates = {
           lat: latlng.getLat(),
           lng: latlng.getLng(),
           source: 'manual'
         };
-        
+
         setCoordinates(newCoords);
-        
+
         // 마커 위치 업데이트
-        markerInstance.current.setPosition(latlng);
-        
+        markerInstance.current!.setPosition(latlng);
+
         // 정보창 업데이트
         infoWindow.setContent(`
           <div style="padding:10px; min-width:200px;">
@@ -318,7 +283,7 @@ export default function DaumAddressEmbed({
               경도: ${newCoords.lng.toFixed(6)}<br>
               출처: 수동 조정
             </div>
-            <div style="font-size:11px; color:#007bff; margin-top:5px;">📍 마커를 드래그하거나 지도를 클릭해서 위치를 조정하세요</div>
+            <div style="font-size:11px; color:#007bff; margin-top:5px;">마커를 드래그하거나 지도를 클릭해서 위치를 조정하세요</div>
           </div>
         `);
       });
@@ -342,17 +307,16 @@ export default function DaumAddressEmbed({
   const finishLocationEdit = () => {
     setIsEditingLocation(false);
     if (coordinates && addressData) {
-      // 부모 컴포넌트에 업데이트된 좌표 전달
       const fullAddress = detailAddress ? `${address} ${detailAddress}` : address;
-      
+
       onAddressSelect({
         address,
         detailAddress,
         fullAddress,
         coordinates,
-        addressData // 기존 주소 데이터 유지
+        addressData
       });
-      
+
       // 편집 모드가 아닌 일반 지도로 다시 표시
       setTimeout(() => {
         if (coordinates) {
@@ -380,13 +344,12 @@ export default function DaumAddressEmbed({
     if (showModal && typeof window !== 'undefined' && window.daum && window.daum.Postcode) {
       const container = document.getElementById('daum-postcode-container');
       if (container) {
-        // 기존 내용 클리어
         container.innerHTML = '';
-        
+
         new window.daum.Postcode({
-          oncomplete: async function(data: any) {
+          oncomplete: async function(data: DaumPostcodeData) {
             setLoading(true);
-            
+
             const fullAddress = data.roadAddress || data.jibunAddress;
             const newAddressData: AddressData = {
               zonecode: data.zonecode,
@@ -399,24 +362,22 @@ export default function DaumAddressEmbed({
             };
 
             setAddress(fullAddress);
-            setDetailAddress(''); // 새 주소 선택 시 상세 주소 초기화
-            setAddressData(newAddressData); // 주소 데이터 저장
+            setDetailAddress('');
+            setAddressData(newAddressData);
 
             // 좌표 변환 시도
             const coords = await getCoordinatesFromAddress(fullAddress);
             setCoordinates(coords);
 
-            // 지도는 사용자가 원할 때만 표시 (자동 표시 안 함)
-
             // 부모 컴포넌트에 결과 전달
-            const finalResult = {
+            const finalResult: AddressSelectData = {
               address: fullAddress,
               detailAddress: '',
               fullAddress: fullAddress,
               coordinates: coords,
               addressData: newAddressData
             };
-            
+
             onAddressSelect(finalResult);
 
             setShowModal(false);
@@ -480,7 +441,7 @@ export default function DaumAddressEmbed({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <div className="mt-1 text-xs text-gray-500">
-              💡 아파트 동/호수, 건물명, 층수 등 상세한 위치 정보를 입력해주세요
+              아파트 동/호수, 건물명, 층수 등 상세한 위치 정보를 입력해주세요
             </div>
           </div>
         )}
@@ -542,13 +503,13 @@ export default function DaumAddressEmbed({
             </div>
             {!mapLoaded && (
               <div className="mt-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                💡 "지도 로드" 버튼을 클릭하거나 "카카오맵에서 보기"로 위치를 확인할 수 있습니다
+                "지도 로드" 버튼을 클릭하거나 "카카오맵에서 보기"로 위치를 확인할 수 있습니다
               </div>
             )}
             {isEditingLocation && (
               <div className="mt-2 flex items-center space-x-2">
                 <div className="flex-1 text-xs text-orange-700 bg-orange-50 px-2 py-1 rounded">
-                  💡 지도를 클릭하거나 마커를 드래그해서 정확한 위치로 조정하세요
+                  지도를 클릭하거나 마커를 드래그해서 정확한 위치로 조정하세요
                 </div>
                 <button
                   onClick={finishLocationEdit}
@@ -590,7 +551,7 @@ export default function DaumAddressEmbed({
                 </button>
               </div>
             </div>
-            <div 
+            <div
               ref={mapRef}
               style={{ width: '100%', height: '400px' }}
               className="bg-gray-100"
@@ -604,7 +565,6 @@ export default function DaumAddressEmbed({
                   </div>
                 </div>
               ) : coordinates ? (
-                // 지도가 로드되면 displayMapWithMarker가 호출됨
                 <div className="flex items-center justify-center h-full">
                   <div className="text-gray-500 text-sm">지도를 초기화하는 중...</div>
                 </div>
@@ -617,7 +577,7 @@ export default function DaumAddressEmbed({
             {isEditingLocation && (
               <div className="bg-orange-50 px-3 py-2 border-t border-orange-200">
                 <div className="text-xs text-orange-700">
-                  <strong>사용법:</strong> 지도를 클릭하거나 📍 마커를 드래그해서 정확한 위치로 조정한 후 "완료" 버튼을 눌러주세요.
+                  <strong>사용법:</strong> 지도를 클릭하거나 마커를 드래그해서 정확한 위치로 조정한 후 "완료" 버튼을 눌러주세요.
                 </div>
               </div>
             )}
@@ -629,11 +589,11 @@ export default function DaumAddressEmbed({
       {showModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
-            <div 
-              className="fixed inset-0 bg-gray-600 bg-opacity-75" 
-              onClick={() => setShowModal(false)} 
+            <div
+              className="fixed inset-0 bg-gray-600 bg-opacity-75"
+              onClick={() => setShowModal(false)}
             />
-            
+
             <div className="relative bg-white rounded-lg shadow-xl max-w-lg w-full">
               <div className="flex justify-between items-center p-4 border-b">
                 <h3 className="text-lg font-semibold text-gray-900">주소 검색</h3>
@@ -644,10 +604,10 @@ export default function DaumAddressEmbed({
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              
+
               <div className="p-4">
-                <div 
-                  id="daum-postcode-container" 
+                <div
+                  id="daum-postcode-container"
                   style={{ width: '100%', height: '400px' }}
                 ></div>
               </div>

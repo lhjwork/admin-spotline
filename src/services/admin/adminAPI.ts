@@ -1,4 +1,4 @@
-import { legacyApiClient as apiClient } from '../base/apiClient';
+import { apiClient } from '../base/apiClient';
 import { ApiResponseType, PaginationParams } from '../base/types';
 import type { Admin } from '../../types';
 

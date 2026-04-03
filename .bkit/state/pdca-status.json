@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "lastUpdated": "2026-03-18T13:13:23.893Z",
+  "lastUpdated": "2026-04-04T00:00:00.000Z",
   "activeFeatures": [],
   "primaryFeature": null,
   "features": {},
@@ -10,9 +10,17 @@
     "phaseHistory": []
   },
   "session": {
-    "startedAt": "2026-03-18T13:13:23.893Z",
-    "onboardingCompleted": false,
-    "lastActivity": "2026-03-18T13:13:23.893Z"
+    "startedAt": "2026-04-04T00:00:00.000Z",
+    "onboardingCompleted": true,
+    "lastActivity": "2026-04-04T00:00:00.000Z"
   },
-  "history": []
+  "history": [
+    {
+      "feature": "admin-legacy-cleanup",
+      "action": "archived",
+      "timestamp": "2026-04-04T00:00:00.000Z",
+      "matchRate": 100,
+      "archivedTo": "docs/archive/2026-04/admin-legacy-cleanup/"
+    }
+  ]
 }

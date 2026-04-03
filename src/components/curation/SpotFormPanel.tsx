@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { Loader2 } from "lucide-react";
 import type { CreateSpotRequest, SpotCategory } from "../../types/v2";
 import { AREAS, SPOT_CATEGORIES, extractAreaFromAddress } from "../../constants";
-import AddressSearchWithMap from "../AddressSearchWithMap";
+import DaumAddressEmbed from "../DaumAddressEmbed";
 import SpotMediaUpload, { type MediaItem } from "./SpotMediaUpload";
 
 interface SpotFormPanelProps {
@@ -73,10 +73,15 @@ export default function SpotFormPanel({ onSubmit, saving, onLocationChange }: Sp
 
   const handleAddressSelect = (data: {
     address: string;
-    coordinates: { lat: number; lng: number } | null;
-    addressData: any;
+    detailAddress: string;
+    fullAddress: string;
+    coordinates: { lat: number; lng: number; source?: string } | null;
+    addressData: { zonecode: string; roadAddress: string; jibunAddress: string; buildingName: string; sido: string; sigungu: string; bname: string };
   }) => {
     setValue("address", data.address);
+    if (data.detailAddress) {
+      setValue("addressDetail", data.detailAddress);
+    }
 
     if (data.coordinates) {
       setValue("latitude", data.coordinates.lat);
@@ -93,7 +98,6 @@ export default function SpotFormPanel({ onSubmit, saving, onLocationChange }: Sp
       if (ad.sigungu) setValue("sigungu", ad.sigungu);
       if (ad.bname) {
         setValue("dong", ad.bname);
-        // dong 값으로 area도 자동 설정
         const area = extractAreaFromAddress(data.address) || ad.bname;
         setValue("area", area);
       }
@@ -157,13 +161,12 @@ export default function SpotFormPanel({ onSubmit, saving, onLocationChange }: Sp
         {errors.title && <p className="mt-1 text-xs text-red-500">{errors.title.message}</p>}
       </div>
 
-      {/* 주소 검색 (AddressSearchWithMap) */}
+      {/* 주소 검색 */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">주소 *</label>
-        <AddressSearchWithMap
+        <DaumAddressEmbed
           onAddressSelect={handleAddressSelect}
           initialAddress={address}
-          hideCoordinateInfo
         />
         <input type="hidden" {...register("address", { required: "주소를 검색해주세요" })} />
         {errors.address && <p className="mt-1 text-xs text-red-500">{errors.address.message}</p>}

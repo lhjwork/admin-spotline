@@ -2,14 +2,8 @@
 export { apiClient } from './base/apiClient';
 export type { ApiResponse, PaginationParams, PaginationResponse, BaseFilters, ApiResponseType } from './base/types';
 
-// Authentication
-export { authAPI } from './auth/authAPI';
-
 // Admin Management
 export { adminAPI } from './admin/adminAPI';
-
-// Geocoding
-export { geocodingAPI } from './geocoding/geocodingAPI';
 
 // Media
 export { mediaAPI } from './media/mediaAPI';

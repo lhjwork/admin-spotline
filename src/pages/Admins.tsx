@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { adminAPI } from '../services/api'
+import { adminAPI } from '../services'
 import { useAuth } from '../contexts/AuthContext'
 import { 
   Plus,
