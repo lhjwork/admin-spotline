@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useQuery, useQueryClient } from "react-query";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import DataTable from "../components/DataTable";
 import { routeAPI } from "../services/v2/routeAPI";
@@ -19,7 +19,7 @@ export default function RouteManagement() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => {
     debounceRef.current = setTimeout(() => {
       setKeyword(searchInput);
@@ -28,17 +28,17 @@ export default function RouteManagement() {
     return () => clearTimeout(debounceRef.current);
   }, [searchInput]);
 
-  const { data, isLoading } = useQuery(
-    ["routes", page, areaFilter, themeFilter, keyword],
-    () => routeAPI.getPopular({
+  const { data, isLoading } = useQuery({
+    queryKey: ["routes", page, areaFilter, themeFilter, keyword],
+    queryFn: () => routeAPI.getPopular({
       page,
       size: 20,
       area: areaFilter || undefined,
       theme: (themeFilter as RouteTheme) || undefined,
       keyword: keyword || undefined,
     }),
-    { keepPreviousData: true }
-  );
+    placeholderData: keepPreviousData,
+  });
 
   const springPage = data?.data;
   const routes = springPage?.content ?? [];
@@ -47,7 +47,7 @@ export default function RouteManagement() {
   const handleDelete = async (slug: string) => {
     if (!window.confirm("이 Route를 삭제하시겠습니까?")) return;
     await routeAPI.delete(slug);
-    queryClient.invalidateQueries(["routes"]);
+    queryClient.invalidateQueries({ queryKey: ["routes"] });
     setDetailSlug(null);
   };
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Store, Edit2, Pause, Trash2 } from "lucide-react";
 import { partnerAPI } from "../services/v2/partnerAPI";
 import type { PartnerStatus } from "../types/v2";
@@ -59,7 +59,7 @@ export default function PartnerDetail() {
     );
   }
 
-  const status = statusLabels[partner.status] || statusLabels.ACTIVE;
+  const status = statusLabels[partner.status] ?? { label: "활성", color: "bg-green-100 text-green-700" };
 
   return (
     <div>

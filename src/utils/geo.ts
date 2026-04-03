@@ -40,8 +40,8 @@ export function calculateRouteDistances(
     const next = items[i + 1];
     const lat1 = item.spot.latitude;
     const lng1 = item.spot.longitude;
-    const lat2 = next.spot.latitude;
-    const lng2 = next.spot.longitude;
+    const lat2 = next!.spot.latitude;
+    const lng2 = next!.spot.longitude;
 
     // Skip if coordinates are missing (0,0)
     if ((lat1 === 0 && lng1 === 0) || (lat2 === 0 && lng2 === 0)) {

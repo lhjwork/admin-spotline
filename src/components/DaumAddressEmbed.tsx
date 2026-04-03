@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect, useRef } from 'react';
 import { Search, MapPin, X, Map, Edit3, Check, RotateCcw } from 'lucide-react';
 

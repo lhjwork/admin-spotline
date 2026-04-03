@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Shield, Eye, XCircle, AlertTriangle } from "lucide-react";
 import { reportAPI } from "../services/v2/reportAPI";
 import type { ReportResponse } from "../services/v2/reportAPI";
@@ -31,18 +31,16 @@ export default function ModerationQueue() {
     select: (res) => res.data,
   });
 
-  const resolveMutation = useMutation(
-    ({ id, data }: { id: string; data: { action: "HIDE_CONTENT" | "DISMISS"; moderatorNote?: string } }) =>
+  const resolveMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { action: "HIDE_CONTENT" | "DISMISS"; moderatorNote?: string } }) =>
       reportAPI.resolve(id, data),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries("reports");
-        queryClient.invalidateQueries("reports-pending-count");
-        setResolveTarget(null);
-        setModeratorNote("");
-      },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reports"] });
+      queryClient.invalidateQueries({ queryKey: ["reports-pending-count"] });
+      setResolveTarget(null);
+      setModeratorNote("");
     },
-  );
+  });
 
   const pagination = data ? toDataTablePagination(data) : null;
 
@@ -204,7 +202,7 @@ export default function ModerationQueue() {
             <div className="flex gap-2">
               <button
                 onClick={() => handleResolve("HIDE_CONTENT")}
-                disabled={resolveMutation.isLoading}
+                disabled={resolveMutation.isPending}
                 className="flex flex-1 items-center justify-center gap-1 rounded bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700 disabled:opacity-50"
               >
                 <Eye className="h-4 w-4" />
@@ -212,7 +210,7 @@ export default function ModerationQueue() {
               </button>
               <button
                 onClick={() => handleResolve("DISMISS")}
-                disabled={resolveMutation.isLoading}
+                disabled={resolveMutation.isPending}
                 className="flex flex-1 items-center justify-center gap-1 rounded bg-gray-500 px-4 py-2 text-sm text-white hover:bg-gray-600 disabled:opacity-50"
               >
                 <XCircle className="h-4 w-4" />

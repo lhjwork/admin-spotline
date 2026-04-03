@@ -5,7 +5,7 @@ import {
   Users, LogOut, Menu, X, Store, Shield, LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import type { AdminRole } from "../types";
 import { hasMinRole, getRoleLabel } from "../utils/roles";
 import { reportAPI } from "../services/v2/reportAPI";
@@ -95,7 +95,7 @@ export default function Layout() {
     refetchInterval: 60000,
   });
 
-  const systemBadgeMap = pendingCount ? { "/moderation": pendingCount } : {};
+  const systemBadgeMap: Record<string, number> = pendingCount ? { "/moderation": pendingCount } : {};
 
   const sidebarContent = (onNav?: () => void) => (
     <>

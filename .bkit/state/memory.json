@@ -6,9 +6,9 @@
     "level": "Dynamic"
   },
   "pdca": {
-    "feature": "spot-route-search",
-    "phase": "archived",
-    "matchRate": 100,
+    "feature": "admin-tech-modernization",
+    "phase": "completed",
+    "matchRate": 98,
     "iterationCount": 0,
     "updatedAt": "2026-04-03T00:00:00.000Z"
   }

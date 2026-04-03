@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from 'react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { adminAPI } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import { 
@@ -27,16 +27,14 @@ interface CreateAdminModalProps {
 function CreateAdminModal({ isOpen, onClose, onSuccess }: CreateAdminModalProps) {
   const { register, handleSubmit, formState: { errors }, reset } = useForm<any>()
   
-  const createMutation = useMutation(
-    (data: any) => adminAPI.createAdmin(data),
-    {
-      onSuccess: () => {
-        onSuccess()
-        onClose()
-        reset()
-      }
-    }
-  )
+  const createMutation = useMutation({
+    mutationFn: (data: any) => adminAPI.createAdmin(data),
+    onSuccess: () => {
+      onSuccess()
+      onClose()
+      reset()
+    },
+  })
 
   const onSubmit = (data: any) => {
     createMutation.mutate(data)
@@ -135,10 +133,10 @@ function CreateAdminModal({ isOpen, onClose, onSuccess }: CreateAdminModalProps)
               </button>
               <button
                 type="submit"
-                disabled={createMutation.isLoading}
+                disabled={createMutation.isPending}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
               >
-                {createMutation.isLoading ? '생성 중...' : '생성'}
+                {createMutation.isPending ? '생성 중...' : '생성'}
               </button>
             </div>
           </form>
@@ -153,18 +151,16 @@ export default function Admins() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const queryClient = useQueryClient()
 
-  const { data: adminsResponse, isLoading, error } = useQuery(
-    'admins',
-    () => adminAPI.getAdminList(),
-    {
-      select: (response) => response.data.data
-    }
-  )
+  const { data: adminsResponse, isLoading, error } = useQuery({
+    queryKey: ['admins'],
+    queryFn: () => adminAPI.getAdminList(),
+    select: (response: any) => response.data.data,
+  })
 
   const admins = adminsResponse?.admins || []
 
   const handleCreateSuccess = () => {
-    queryClient.invalidateQueries('admins')
+    queryClient.invalidateQueries({ queryKey: ['admins'] })
   }
 
   const getAdminRoleLabel = (role: string) => {

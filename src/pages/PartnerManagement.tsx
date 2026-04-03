@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Plus, Search } from "lucide-react";
 import { partnerAPI } from "../services/v2/partnerAPI";
 import { toDataTablePagination } from "../types/v2";

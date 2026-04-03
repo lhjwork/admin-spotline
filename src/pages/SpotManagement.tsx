@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import DataTable from "../components/DataTable";
 import SpotEditModal from "../components/curation/SpotEditModal";
 import { spotAPI } from "../services/v2/spotAPI";
@@ -18,7 +18,7 @@ export default function SpotManagement() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const queryClient = useQueryClient();
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => {
     debounceRef.current = setTimeout(() => {
       setKeyword(searchInput);
@@ -27,36 +27,34 @@ export default function SpotManagement() {
     return () => clearTimeout(debounceRef.current);
   }, [searchInput]);
 
-  const { data, isLoading } = useQuery(
-    ["spots", page, areaFilter, categoryFilter, keyword],
-    () => spotAPI.getList({
+  const { data, isLoading } = useQuery({
+    queryKey: ["spots", page, areaFilter, categoryFilter, keyword],
+    queryFn: () => spotAPI.getList({
       page,
       size: 20,
       area: areaFilter || undefined,
       category: (categoryFilter as SpotCategory) || undefined,
       keyword: keyword || undefined,
     }),
-    { keepPreviousData: true }
-  );
+    placeholderData: keepPreviousData,
+  });
 
   const springPage = data?.data;
   const spots = springPage?.content ?? [];
   const pagination = springPage ? toDataTablePagination(springPage) : null;
 
-  const updateMutation = useMutation(
-    ({ slug, data }: { slug: string; data: UpdateSpotRequest }) => spotAPI.update(slug, data),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["spots"]);
-        setEditingSpot(null);
-      },
-    }
-  );
+  const updateMutation = useMutation({
+    mutationFn: ({ slug, data }: { slug: string; data: UpdateSpotRequest }) => spotAPI.update(slug, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["spots"] });
+      setEditingSpot(null);
+    },
+  });
 
-  const deleteMutation = useMutation(
-    (slug: string) => spotAPI.delete(slug),
-    { onSuccess: () => queryClient.invalidateQueries(["spots"]) }
-  );
+  const deleteMutation = useMutation({
+    mutationFn: (slug: string) => spotAPI.delete(slug),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["spots"] }),
+  });
 
   const handleEdit = async (spot: SpotDetailResponse) => {
     setLoadingDetail(true);
@@ -184,7 +182,7 @@ export default function SpotManagement() {
           onSave={async (slug, data) => {
             await updateMutation.mutateAsync({ slug, data });
           }}
-          saving={updateMutation.isLoading}
+          saving={updateMutation.isPending}
         />
       )}
     </div>

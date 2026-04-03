@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useMutation, useQuery, useQueryClient } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MapPin, ExternalLink, Zap, Layers, PenTool } from "lucide-react";
 import { spotAPI } from "../services/v2/spotAPI";
 import type { CreateSpotRequest, PlaceInfo } from "../types/v2";
@@ -33,22 +33,20 @@ export default function SpotCuration() {
   const kakaoMapInstance = useRef<any>(null);
   const kakaoMarkerInstance = useRef<any>(null);
 
-  const { data: spotsPage } = useQuery(
-    ["spots", "today"],
-    () => spotAPI.getList({ page: 1, size: 1 }),
-    { refetchOnWindowFocus: false }
-  );
+  const { data: spotsPage } = useQuery({
+    queryKey: ["spots", "today"],
+    queryFn: () => spotAPI.getList({ page: 1, size: 1 }),
+    refetchOnWindowFocus: false,
+  });
   const totalSpots = spotsPage?.data?.totalElements ?? 0;
 
-  const createMutation = useMutation(
-    (data: CreateSpotRequest) => spotAPI.create(data),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["spots"]);
-        setSelectedPlace(null);
-      },
-    }
-  );
+  const createMutation = useMutation({
+    mutationFn: (data: CreateSpotRequest) => spotAPI.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["spots"] });
+      setSelectedPlace(null);
+    },
+  });
 
   const handleQuickSubmit = async (data: CreateSpotRequest) => {
     await createMutation.mutateAsync(data);
@@ -193,7 +191,7 @@ export default function SpotCuration() {
                 place={selectedPlace}
                 onSubmit={handleQuickSubmit}
                 onCancel={() => setSelectedPlace(null)}
-                saving={createMutation.isLoading}
+                saving={createMutation.isPending}
               />
             )}
             {mode === "quick" && !selectedPlace && (
@@ -220,7 +218,7 @@ export default function SpotCuration() {
             <h2 className="text-sm font-semibold text-gray-700 mb-4">Spot 등록</h2>
             <SpotFormPanel
               onSubmit={handleManualSubmit}
-              saving={createMutation.isLoading}
+              saving={createMutation.isPending}
               onLocationChange={setLocation}
             />
           </div>

@@ -1,4 +1,4 @@
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { MapPin, Route, Search, ArrowUpRight, Eye, MessageSquare, Flag, TrendingUp } from "lucide-react";
 import { spotAPI } from "../services/v2/spotAPI";
@@ -29,62 +29,62 @@ const CATEGORY_KEYS = Object.keys(SPOT_CATEGORIES) as SpotCategory[];
 export default function Dashboard() {
   const navigate = useNavigate();
 
-  const { data: spotsData, isLoading: spotsLoading } = useQuery(
-    ["dashboard-spots"],
-    () => spotAPI.getList({ page: 1, size: 1 }),
-    { refetchOnWindowFocus: false }
-  );
+  const { data: spotsData, isLoading: spotsLoading } = useQuery({
+    queryKey: ["dashboard-spots"],
+    queryFn: () => spotAPI.getList({ page: 1, size: 1 }),
+    refetchOnWindowFocus: false,
+  });
 
-  const { data: routesData, isLoading: routesLoading } = useQuery(
-    ["dashboard-routes"],
-    () => routeAPI.getPopular({ page: 1, size: 1 }),
-    { refetchOnWindowFocus: false }
-  );
+  const { data: routesData, isLoading: routesLoading } = useQuery({
+    queryKey: ["dashboard-routes"],
+    queryFn: () => routeAPI.getPopular({ page: 1, size: 1 }),
+    refetchOnWindowFocus: false,
+  });
 
   // 20개 지역별 Spot 수
   const areaQueries = AREAS.map((area) =>
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    useQuery(
-      ["dashboard-area", area],
-      () => spotAPI.getList({ page: 1, size: 1, area }),
-      { refetchOnWindowFocus: false }
-    )
+    useQuery({
+      queryKey: ["dashboard-area", area],
+      queryFn: () => spotAPI.getList({ page: 1, size: 1, area }),
+      refetchOnWindowFocus: false,
+    })
   );
 
   // 10개 카테고리별 Spot 수
   const categoryQueries = CATEGORY_KEYS.map((cat) =>
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    useQuery(
-      ["dashboard-category", cat],
-      () => spotAPI.getList({ page: 1, size: 1, category: cat }),
-      { refetchOnWindowFocus: false }
-    )
+    useQuery({
+      queryKey: ["dashboard-category", cat],
+      queryFn: () => spotAPI.getList({ page: 1, size: 1, category: cat }),
+      refetchOnWindowFocus: false,
+    })
   );
 
   // ---- 플랫폼 성과 데이터 ----
-  const { data: platformStats } = useQuery(
-    ["platform-stats"],
-    () => analyticsAPI.getStats(),
-    { refetchOnWindowFocus: false }
-  );
+  const { data: platformStats } = useQuery({
+    queryKey: ["platform-stats"],
+    queryFn: () => analyticsAPI.getStats(),
+    refetchOnWindowFocus: false,
+  });
 
-  const { data: popularSpots } = useQuery(
-    ["popular-spots"],
-    () => analyticsAPI.getPopularSpots(),
-    { refetchOnWindowFocus: false }
-  );
+  const { data: popularSpots } = useQuery({
+    queryKey: ["popular-spots"],
+    queryFn: () => analyticsAPI.getPopularSpots(),
+    refetchOnWindowFocus: false,
+  });
 
-  const { data: popularRoutes } = useQuery(
-    ["popular-routes"],
-    () => analyticsAPI.getPopularRoutes(),
-    { refetchOnWindowFocus: false }
-  );
+  const { data: popularRoutes } = useQuery({
+    queryKey: ["popular-routes"],
+    queryFn: () => analyticsAPI.getPopularRoutes(),
+    refetchOnWindowFocus: false,
+  });
 
-  const { data: dailyTrend } = useQuery(
-    ["daily-trend"],
-    () => analyticsAPI.getDailyTrend(30),
-    { refetchOnWindowFocus: false }
-  );
+  const { data: dailyTrend } = useQuery({
+    queryKey: ["daily-trend"],
+    queryFn: () => analyticsAPI.getDailyTrend(30),
+    refetchOnWindowFocus: false,
+  });
 
   const totalSpots = spotsData?.data?.totalElements ?? 0;
   const totalRoutes = routesData?.data?.totalElements ?? 0;
@@ -92,13 +92,13 @@ export default function Dashboard() {
 
   const areaCounts = AREAS.map((area, i) => ({
     area,
-    count: areaQueries[i].data?.data?.totalElements ?? 0,
+    count: areaQueries[i]?.data?.data?.totalElements ?? 0,
   }));
 
   const categoryCounts = CATEGORY_KEYS.map((cat, i) => ({
     category: cat,
     label: SPOT_CATEGORIES[cat],
-    count: categoryQueries[i].data?.data?.totalElements ?? 0,
+    count: categoryQueries[i]?.data?.data?.totalElements ?? 0,
   }));
 
   const goals = GOAL_AREAS.map((g) => ({
@@ -190,21 +190,25 @@ export default function Dashboard() {
             <MetricCard
               title="Spot 조회수"
               value={platformStats.totalSpotViews.toLocaleString()}
+              change=""
               icon={Eye}
             />
             <MetricCard
               title="Route 조회수"
               value={platformStats.totalRouteViews.toLocaleString()}
+              change=""
               icon={TrendingUp}
             />
             <MetricCard
               title="총 댓글"
               value={platformStats.totalComments.toLocaleString()}
+              change=""
               icon={MessageSquare}
             />
             <MetricCard
               title="총 신고"
               value={platformStats.totalReports.toLocaleString()}
+              change=""
               icon={Flag}
             />
           </div>
@@ -281,6 +285,7 @@ export default function Dashboard() {
         <ChartCard title="일별 콘텐츠 생성 트렌드" subtitle="최근 30일간 Spot/Route 생성 건수">
           <BarChartComponent
             data={trendChartData}
+            xKey="name"
             bars={[
               { dataKey: "Spot", color: "#3B82F6" },
               { dataKey: "Route", color: "#10B981" },

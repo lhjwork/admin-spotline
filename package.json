@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -14,29 +15,31 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@supabase/supabase-js": "^2.101.0",
+    "@tanstack/react-query": "^5.0.0",
     "axios": "^1.6.2",
     "clsx": "^2.0.0",
     "date-fns": "^2.30.0",
     "lucide-react": "^0.294.0",
     "qrcode.react": "^4.2.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "react-hook-form": "^7.48.2",
-    "react-query": "^3.39.3",
     "react-router-dom": "^6.20.1",
     "recharts": "^2.8.0"
   },
   "devDependencies": {
-    "@types/react": "^18.2.37",
-    "@types/react-dom": "^18.2.15",
-    "@vitejs/plugin-react": "^4.1.1",
-    "autoprefixer": "^10.4.16",
-    "eslint": "^8.53.0",
-    "eslint-plugin-react": "^7.33.2",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.4",
-    "postcss": "^8.4.32",
-    "tailwindcss": "^3.3.6",
-    "vite": "^4.5.0"
+    "@eslint/js": "^9.0.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.4.0",
+    "eslint": "^9.0.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.0.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.0.0",
+    "vite": "^6.0.0"
   }
 }

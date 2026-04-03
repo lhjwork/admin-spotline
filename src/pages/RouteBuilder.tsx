@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { useMutation, useQuery, useQueryClient } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { routeAPI } from "../services/v2/routeAPI";
 import type {
@@ -73,11 +73,11 @@ export default function RouteBuilder() {
   });
 
   // Edit mode: 기존 데이터 로드
-  const { data: existingRoute } = useQuery(
-    ["route", slug],
-    () => routeAPI.getBySlug(slug!),
-    { enabled: isEditMode },
-  );
+  const { data: existingRoute } = useQuery({
+    queryKey: ["route", slug],
+    queryFn: () => routeAPI.getBySlug(slug!),
+    enabled: isEditMode,
+  });
 
   // 로드 완료 시 form + items 초기화
   useEffect(() => {
@@ -115,26 +115,22 @@ export default function RouteBuilder() {
   const totalWalkingMin = distances.reduce((sum, d) => sum + (d.walkingTimeToNext ?? 0), 0);
   const totalStayMin = items.reduce((sum, item) => sum + (item.meta.stayDuration ?? 0), 0);
 
-  const createMutation = useMutation(
-    (data: CreateRouteRequest) => routeAPI.create(data),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["routes"]);
-        navigate("/routes");
-      },
-    }
-  );
+  const createMutation = useMutation({
+    mutationFn: (data: CreateRouteRequest) => routeAPI.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["routes"] });
+      navigate("/routes");
+    },
+  });
 
-  const updateMutation = useMutation(
-    (data: UpdateRouteRequest) => routeAPI.update(slug!, data),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["routes"]);
-        queryClient.invalidateQueries(["route", slug]);
-        navigate("/routes");
-      },
-    }
-  );
+  const updateMutation = useMutation({
+    mutationFn: (data: UpdateRouteRequest) => routeAPI.update(slug!, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["routes"] });
+      queryClient.invalidateQueries({ queryKey: ["route", slug] });
+      navigate("/routes");
+    },
+  });
 
   const mutation = isEditMode ? updateMutation : createMutation;
 
@@ -289,10 +285,10 @@ export default function RouteBuilder() {
         <div className="mt-6 flex justify-end">
           <button
             type="submit"
-            disabled={mutation.isLoading || items.length === 0}
+            disabled={mutation.isPending || items.length === 0}
             className="flex items-center px-6 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {mutation.isLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+            {mutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
             {isEditMode ? "Route 수정" : "Route 생성"} ({items.length}개 Spot)
           </button>
         </div>

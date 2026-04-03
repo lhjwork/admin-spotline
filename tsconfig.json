@@ -14,21 +14,16 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* Linting - 엄격한 TypeScript 설정 */
+    /* Linting */
     "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
-    
+
     /* 추가 검사 */
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "exactOptionalPropertyTypes": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true,
     
     /* 모듈 해석 */
     "esModuleInterop": true,

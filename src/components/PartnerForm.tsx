@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Search, MapPin } from "lucide-react";
 import { spotAPI } from "../services/v2/spotAPI";
 import type { CreatePartnerRequest, UpdatePartnerRequest, PartnerTier, PartnerDetailResponse, SpotDetailResponse } from "../types/v2";

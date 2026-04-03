@@ -196,7 +196,8 @@ export default function RouteSpotList({ items, onChange, distances }: RouteSpotL
 
   const updateMeta = (index: number, field: keyof RouteSpotRequest, value: string | number) => {
     const next = [...items];
-    next[index] = { ...next[index], meta: { ...next[index].meta, [field]: value } };
+    const current = next[index]!;
+    next[index] = { ...current, meta: { ...current.meta, [field]: value } };
     onChange(next);
   };
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Search, Plus, Loader2 } from "lucide-react";
 import { spotAPI } from "../../services/v2/spotAPI";
 import { AREAS, SPOT_CATEGORIES } from "../../constants";
@@ -15,16 +15,16 @@ export default function RouteSpotSelector({ onAdd, addedSpotIds }: RouteSpotSele
   const [areaFilter, setAreaFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
 
-  const { data, isLoading } = useQuery(
-    ["spots-for-route", page, areaFilter, categoryFilter],
-    () => spotAPI.getList({
+  const { data, isLoading } = useQuery({
+    queryKey: ["spots-for-route", page, areaFilter, categoryFilter],
+    queryFn: () => spotAPI.getList({
       page,
       size: 10,
       area: areaFilter || undefined,
       category: (categoryFilter as SpotCategory) || undefined,
     }),
-    { keepPreviousData: true }
-  );
+    placeholderData: keepPreviousData,
+  });
 
   const spots = data?.data?.content ?? [];
   const totalPages = data?.data?.totalPages ?? 0;

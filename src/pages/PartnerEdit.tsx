@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useMutation } from "react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { partnerAPI } from "../services/v2/partnerAPI";
 import type { UpdatePartnerRequest } from "../types/v2";

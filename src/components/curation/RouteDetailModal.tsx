@@ -1,4 +1,4 @@
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { X, Pencil, Trash2, MapPin, Clock, Route as RouteIcon } from "lucide-react";
 import { routeAPI } from "../../services/v2/routeAPI";
 import { ROUTE_THEMES } from "../../constants";
@@ -12,10 +12,10 @@ interface RouteDetailModalProps {
 }
 
 export default function RouteDetailModal({ slug, onClose, onEdit, onDelete }: RouteDetailModalProps) {
-  const { data, isLoading } = useQuery(
-    ["route", slug],
-    () => routeAPI.getBySlug(slug),
-  );
+  const { data, isLoading } = useQuery({
+    queryKey: ["route", slug],
+    queryFn: () => routeAPI.getBySlug(slug),
+  });
 
   const route = data?.data;
 

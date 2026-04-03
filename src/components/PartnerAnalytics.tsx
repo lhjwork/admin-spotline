@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { BarChart3, Users, Percent } from "lucide-react";
 import { partnerAPI } from "../services/v2/partnerAPI";
 
@@ -106,8 +106,8 @@ export default function PartnerAnalytics({ partnerId }: PartnerAnalyticsProps) {
         </div>
         {data.dailyTrend.length > 0 && (
           <div className="mt-1 flex justify-between text-xs text-gray-400">
-            <span>{data.dailyTrend[0].date.slice(5)}</span>
-            <span>{data.dailyTrend[data.dailyTrend.length - 1].date.slice(5)}</span>
+            <span>{data.dailyTrend[0]?.date.slice(5)}</span>
+            <span>{data.dailyTrend[data.dailyTrend.length - 1]?.date.slice(5)}</span>
           </div>
         )}
       </div>

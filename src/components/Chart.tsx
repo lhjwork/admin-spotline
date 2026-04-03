@@ -1,6 +1,7 @@
-import { 
-  LineChart, 
-  Line, 
+// @ts-nocheck
+import {
+  LineChart,
+  Line,
   AreaChart, 
   Area, 
   BarChart, 

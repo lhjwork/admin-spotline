@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Search, Loader2 } from "lucide-react";
-import { useQuery } from "react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useDebounce } from "../../hooks/useDebounce";
 import { placeAPI } from "../../services/v2/placeAPI";
 import type { PlaceInfo } from "../../types/v2";
@@ -29,11 +29,12 @@ export default function PlaceSearchPanel({
 
   const checkedIds = new Set(checkedPlaces.map((p) => `${p.provider}-${p.placeId}`));
 
-  const { data, isLoading, isError } = useQuery(
-    ["placeSearch", debouncedQuery, provider],
-    () => placeAPI.search(debouncedQuery, provider),
-    { enabled: debouncedQuery.length >= 2, keepPreviousData: true }
-  );
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["placeSearch", debouncedQuery, provider],
+    queryFn: () => placeAPI.search(debouncedQuery, provider),
+    enabled: debouncedQuery.length >= 2,
+    placeholderData: keepPreviousData,
+  });
 
   const places: PlaceInfo[] = data?.data ?? [];
 

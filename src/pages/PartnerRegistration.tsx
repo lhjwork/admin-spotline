@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation } from "react-query";
+import { useMutation } from "@tanstack/react-query";
 import { ArrowLeft, Store, Gift } from "lucide-react";
 import { partnerAPI } from "../services/v2/partnerAPI";
 import type { CreatePartnerRequest } from "../types/v2";
@@ -37,7 +37,7 @@ export default function PartnerRegistration() {
         {/* Left: Form */}
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <PartnerForm
-            onSubmit={(data) => mutation.mutate(data)}
+            onSubmit={(data) => mutation.mutate(data as CreatePartnerRequest)}
             isSubmitting={mutation.isPending}
             error={error}
           />

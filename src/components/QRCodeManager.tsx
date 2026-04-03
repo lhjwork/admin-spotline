@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, QrCode } from "lucide-react";
 import { partnerAPI } from "../services/v2/partnerAPI";
 import type { PartnerQRCodeResponse } from "../types/v2";

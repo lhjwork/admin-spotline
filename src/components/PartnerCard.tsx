@@ -18,7 +18,7 @@ interface PartnerCardProps {
 }
 
 export default function PartnerCard({ partner, onClick }: PartnerCardProps) {
-  const status = statusLabels[partner.status] || statusLabels.ACTIVE;
+  const status = statusLabels[partner.status] ?? { label: "활성", color: "bg-green-100 text-green-700" };
   const activeQrCount = partner.qrCodes.filter((qr) => qr.isActive).length;
 
   return (

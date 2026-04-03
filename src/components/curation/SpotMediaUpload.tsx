@@ -181,7 +181,7 @@ export default function SpotMediaUpload({ value, onChange }: SpotMediaUploadProp
     }
 
     for (let i = 0; i < fileArray.length; i++) {
-      const err = await validateFile(fileArray[i]);
+      const err = await validateFile(fileArray[i]!);
       if (err) {
         setError(err);
         return;
@@ -201,7 +201,7 @@ export default function SpotMediaUpload({ value, onChange }: SpotMediaUploadProp
   }, [totalCount, validateFile, uploadSingleFile, value, onChange]);
 
   const handleRemove = useCallback(async (index: number) => {
-    const item = value[index];
+    const item = value[index]!;
     try {
       await mediaAPI.deleteMedia(item.s3Key);
     } catch {

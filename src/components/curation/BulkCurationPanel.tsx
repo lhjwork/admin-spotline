@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { X, Loader2 } from "lucide-react";
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { PlaceInfo } from "../../types/v2";
 import { SPOT_CATEGORIES } from "../../constants";
 import { placeToSpotRequest } from "../../utils/placeConverter";
@@ -20,8 +20,8 @@ export default function BulkCurationPanel({ places, onComplete, onRemove }: Bulk
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [result, setResult] = useState<{ total: number; success: number } | null>(null);
 
-  const mutation = useMutation(
-    async () => {
+  const mutation = useMutation({
+    mutationFn: async () => {
       const requests = places.map((place) => {
         const key = `${place.provider}-${place.placeId}`;
         const note = notes[key]?.trim() || defaultNote.trim() || undefined;
@@ -29,20 +29,18 @@ export default function BulkCurationPanel({ places, onComplete, onRemove }: Bulk
       });
       return spotAPI.bulkCreate(requests);
     },
-    {
-      onSuccess: (res) => {
-        const successCount = Array.isArray(res.data) ? res.data.length : places.length;
-        setResult({ total: places.length, success: successCount });
-        queryClient.invalidateQueries(["spots"]);
-        if (successCount === places.length) {
-          onComplete();
-        }
-      },
-      onError: () => {
-        setResult({ total: places.length, success: 0 });
-      },
-    }
-  );
+    onSuccess: (res) => {
+      const successCount = Array.isArray(res.data) ? res.data.length : places.length;
+      setResult({ total: places.length, success: successCount });
+      queryClient.invalidateQueries({ queryKey: ["spots"] });
+      if (successCount === places.length) {
+        onComplete();
+      }
+    },
+    onError: () => {
+      setResult({ total: places.length, success: 0 });
+    },
+  });
 
   const updateNote = (key: string, value: string) => {
     setNotes((prev) => ({ ...prev, [key]: value }));
@@ -121,11 +119,11 @@ export default function BulkCurationPanel({ places, onComplete, onRemove }: Bulk
         </button>
         <button
           onClick={() => mutation.mutate()}
-          disabled={mutation.isLoading}
+          disabled={mutation.isPending}
           className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {mutation.isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-          {mutation.isLoading ? "등록 중..." : `${places.length}개 일괄 등록`}
+          {mutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+          {mutation.isPending ? "등록 중..." : `${places.length}개 일괄 등록`}
         </button>
       </div>
 
