@@ -13,6 +13,7 @@ export interface RouteListParams {
   size?: number;
   area?: string;
   theme?: RouteTheme;
+  keyword?: string;
 }
 
 export const routeAPI = {

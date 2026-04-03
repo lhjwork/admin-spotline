@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import DataTable from "../components/DataTable";
 import SpotEditModal from "../components/curation/SpotEditModal";
@@ -12,17 +12,29 @@ export default function SpotManagement() {
   const [page, setPage] = useState(1);
   const [areaFilter, setAreaFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [keyword, setKeyword] = useState("");
   const [editingSpot, setEditingSpot] = useState<SpotDetailResponse | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const queryClient = useQueryClient();
 
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => {
+    debounceRef.current = setTimeout(() => {
+      setKeyword(searchInput);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(debounceRef.current);
+  }, [searchInput]);
+
   const { data, isLoading } = useQuery(
-    ["spots", page, areaFilter, categoryFilter],
+    ["spots", page, areaFilter, categoryFilter, keyword],
     () => spotAPI.getList({
       page,
       size: 20,
       area: areaFilter || undefined,
       category: (categoryFilter as SpotCategory) || undefined,
+      keyword: keyword || undefined,
     }),
     { keepPreviousData: true }
   );
@@ -111,6 +123,13 @@ export default function SpotManagement() {
 
       {/* 필터 */}
       <div className="flex flex-wrap gap-3 mb-4">
+        <input
+          type="text"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="제목 또는 크루노트 검색..."
+          className="px-3 py-2 border border-gray-300 rounded-md text-sm w-64 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+        />
         <select
           value={areaFilter}
           onChange={(e) => { setAreaFilter(e.target.value); setPage(1); }}

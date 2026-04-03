@@ -12,6 +12,7 @@ export interface SpotListParams {
   size?: number;
   area?: string;
   category?: SpotCategory;
+  keyword?: string;
 }
 
 export const spotAPI = {
