@@ -24,7 +24,7 @@ Phase 2B에서는 Route Builder UX를 개선하여 크루가 Route를 더 빠르
 ## 2. 범위
 
 ### In-Scope
-- RouteSpotList 드래그 앤 드롭 정렬 (dnd-kit)
+- SpotLineSpotList 드래그 앤 드롭 정렬 (dnd-kit)
 - Haversine 공식으로 Spot 간 직선거리 자동 계산
 - 거리 기반 도보시간 자동 추정 (80m/min 기준)
 - Route 요약 패널 (총 거리, 총 시간, Spot 수)
@@ -46,14 +46,14 @@ Phase 2B에서는 Route Builder UX를 개선하여 크루가 Route를 더 빠르
 | # | 파일 | 설명 | 신규/수정 |
 |---|------|------|-----------|
 | 1 | `src/utils/geo.ts` | Haversine 거리 계산 + 도보시간 추정 유틸 | 신규 |
-| 2 | `src/components/curation/RouteSpotList.tsx` | dnd-kit 드래그 정렬로 교체 + 자동 거리/시간 표시 | 수정 |
+| 2 | `src/components/curation/SpotLineSpotList.tsx` | dnd-kit 드래그 정렬로 교체 + 자동 거리/시간 표시 | 수정 |
 | 3 | `src/components/curation/RouteSummary.tsx` | Route 요약 패널 (총 거리, 총 시간, Spot 수) | 신규 |
 | 4 | `src/pages/RouteBuilder.tsx` | RouteSummary 추가 + 자동 계산 로직 연결 | 수정 |
 
 ## 5. 구현 순서
 
 1. **Step 1**: `geo.ts` — Haversine 유틸 함수
-2. **Step 2**: `RouteSpotList.tsx` — dnd-kit 드래그 정렬 + 자동 거리/시간 표시
+2. **Step 2**: `SpotLineSpotList.tsx` — dnd-kit 드래그 정렬 + 자동 거리/시간 표시
 3. **Step 3**: `RouteSummary.tsx` — Route 요약 패널
 4. **Step 4**: `RouteBuilder.tsx` — 통합 (자동 계산 + 요약 패널)
 

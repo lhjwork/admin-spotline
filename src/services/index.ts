@@ -11,6 +11,6 @@ export { mediaAPI } from './media/mediaAPI';
 // v2 APIs (Spring Boot)
 export { placeAPI } from './v2/placeAPI';
 export { spotAPI } from './v2/spotAPI';
-export { routeAPI } from './v2/routeAPI';
+export { spotLineAPI } from './v2/spotLineAPI';
 
 export { apiClient as default } from './base/apiClient';

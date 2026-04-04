@@ -5,8 +5,8 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import SpotCuration from "./pages/SpotCuration";
 import SpotManagement from "./pages/SpotManagement";
-import RouteBuilder from "./pages/RouteBuilder";
-import RouteManagement from "./pages/RouteManagement";
+import SpotLineBuilder from "./pages/SpotLineBuilder";
+import SpotLineManagement from "./pages/SpotLineManagement";
 import Admins from "./pages/Admins";
 import PartnerManagement from "./pages/PartnerManagement";
 import PartnerRegistration from "./pages/PartnerRegistration";
@@ -59,9 +59,9 @@ function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="curation" element={<SpotCuration />} />
           <Route path="spots" element={<SpotManagement />} />
-          <Route path="routes/new" element={<RouteBuilder />} />
-          <Route path="routes/:slug/edit" element={<RouteBuilder />} />
-          <Route path="routes" element={<RouteManagement />} />
+          <Route path="spotlines/new" element={<SpotLineBuilder />} />
+          <Route path="spotlines/:slug/edit" element={<SpotLineBuilder />} />
+          <Route path="spotlines" element={<SpotLineManagement />} />
           <Route path="partners" element={
             <ProtectedRoute requiredRole="admin"><PartnerManagement /></ProtectedRoute>
           } />

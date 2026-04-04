@@ -24,8 +24,8 @@ const navigation: NavigationItem[] = [
   // 큐레이션 섹션
   { name: "Spot 큐레이션", href: "/curation", icon: Search, section: "curation" },
   { name: "Spot 관리", href: "/spots", icon: MapPin, section: "curation" },
-  { name: "Route 빌더", href: "/routes/new", icon: Route, section: "curation" },
-  { name: "Route 관리", href: "/routes", icon: List, section: "curation" },
+  { name: "SpotLine 빌더", href: "/spotlines/new", icon: Route, section: "curation" },
+  { name: "SpotLine 관리", href: "/spotlines", icon: List, section: "curation" },
 
   // 파트너 섹션
   { name: "파트너 관리", href: "/partners", icon: Store, section: "partner", minRole: "admin" },
@@ -40,7 +40,7 @@ function NavLink({ item, onClick, badge }: { item: NavigationItem; onClick?: () 
   const Icon = item.icon;
   const isActive =
     location.pathname === item.href ||
-    (item.href !== "/dashboard" && item.href !== "/routes/new" && location.pathname.startsWith(item.href));
+    (item.href !== "/dashboard" && item.href !== "/spotlines/new" && location.pathname.startsWith(item.href));
 
   return (
     <Link

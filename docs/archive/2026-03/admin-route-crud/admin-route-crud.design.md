@@ -12,13 +12,13 @@ public class UpdateRouteRequest {
     private String description;
     private RouteTheme theme;
     private String area;
-    private List<CreateRouteRequest.RouteSpotRequest> spots; // null이면 spots 변경 안 함
+    private List<CreateRouteRequest.SpotLineSpotRequest> spots; // null이면 spots 변경 안 함
 }
 ```
 
 - 모든 필드 optional (UpdateSpotRequest 패턴 준수)
 - spots가 null이면 기존 spots 유지, non-null이면 전체 교체
-- spots 교체 시 기존 RouteSpot `clear()` → 새로 추가 (orphanRemoval=true 활용)
+- spots 교체 시 기존 SpotLineSpot `clear()` → 새로 추가 (orphanRemoval=true 활용)
 
 ### 1.2 RouteService.update() (추가)
 
@@ -38,11 +38,11 @@ public RouteDetailResponse update(String slug, UpdateRouteRequest request) {
         int totalDuration = 0;
         int totalDistance = 0;
         for (int i = 0; i < request.getSpots().size(); i++) {
-            CreateRouteRequest.RouteSpotRequest spotReq = request.getSpots().get(i);
+            CreateRouteRequest.SpotLineSpotRequest spotReq = request.getSpots().get(i);
             Spot spot = spotRepository.findById(spotReq.getSpotId())
                 .orElseThrow(() -> new ResourceNotFoundException("Spot", spotReq.getSpotId().toString()));
 
-            RouteSpot routeSpot = RouteSpot.builder()
+            SpotLineSpot routeSpot = SpotLineSpot.builder()
                 .route(route)
                 .spot(spot)
                 .spotOrder(spotReq.getOrder() != null ? spotReq.getOrder() : i + 1)
@@ -117,7 +117,7 @@ export interface UpdateRouteRequest {
   description?: string;
   theme?: RouteTheme;
   area?: string;
-  spots?: RouteSpotRequest[];
+  spots?: SpotLineSpotRequest[];
 }
 ```
 
@@ -160,7 +160,7 @@ export interface UpdateRouteRequest {
 1. URL 파라미터 `slug`를 받으면 edit mode 활성화
 2. edit mode 시 `routeAPI.getBySlug(slug)`로 기존 데이터 로드
 3. form defaultValues를 기존 데이터로 설정
-4. RouteSpotItem 목록을 기존 spots로 초기화
+4. SpotLineSpotItem 목록을 기존 spots로 초기화
 5. 저장 버튼 텍스트: "Route 수정" (create → update API 호출)
 6. 페이지 제목: "Route 수정" (edit mode) / "Route 빌더" (create mode)
 
@@ -191,7 +191,7 @@ useEffect(() => {
       area: existingRoute.data.area,
     });
     setItems(existingRoute.data.spots.map(s => ({
-      spot: s as SpotDetailResponse, // RouteSpotDetail → SpotDetailResponse 매핑
+      spot: s as SpotDetailResponse, // SpotLineSpotDetail → SpotDetailResponse 매핑
       meta: { spotId: s.spotId, order: s.order, ... }
     })));
   }
@@ -260,11 +260,11 @@ const handleDelete = async (slug: string) => {
 
 ---
 
-## 4. RouteSpotDetail → SpotDetailResponse 매핑 주의
+## 4. SpotLineSpotDetail → SpotDetailResponse 매핑 주의
 
-RouteDetailResponse의 spots는 `RouteSpotDetail` 타입:
+RouteDetailResponse의 spots는 `SpotLineSpotDetail` 타입:
 ```typescript
-interface RouteSpotDetail {
+interface SpotLineSpotDetail {
   spotId: string;
   spotTitle: string;
   spotSlug: string;
@@ -279,11 +279,11 @@ interface RouteSpotDetail {
 }
 ```
 
-RouteBuilder의 RouteSpotItem은 `SpotDetailResponse`를 요구하므로, edit mode에서 RouteSpotDetail을 SpotDetailResponse 형태로 매핑 필요:
+RouteBuilder의 SpotLineSpotItem은 `SpotDetailResponse`를 요구하므로, edit mode에서 SpotLineSpotDetail을 SpotDetailResponse 형태로 매핑 필요:
 
 ```typescript
-// 최소한의 매핑 — RouteSpotList에서 사용하는 필드만 충족
-const toSpotDetail = (rs: RouteSpotDetail): SpotDetailResponse => ({
+// 최소한의 매핑 — SpotLineSpotList에서 사용하는 필드만 충족
+const toSpotDetail = (rs: SpotLineSpotDetail): SpotDetailResponse => ({
   id: rs.spotId,
   slug: rs.spotSlug,
   title: rs.spotTitle,

@@ -20,7 +20,7 @@ Phase 2B Route Builder UX 개선 구현 완료 후, Design 문서와 실제 코�
 - **Design Document**: `docs/02-design/features/crew-curation-tool-2b.design.md`
 - **Implementation Files**:
   - `src/utils/geo.ts` (신규)
-  - `src/components/curation/RouteSpotList.tsx` (수정)
+  - `src/components/curation/SpotLineSpotList.tsx` (수정)
   - `src/components/curation/RouteSummary.tsx` (신규)
   - `src/pages/RouteBuilder.tsx` (수정)
 - **Analysis Date**: 2026-03-28
@@ -43,14 +43,14 @@ Phase 2B Route Builder UX 개선 구현 완료 후, Design 문서와 실제 코�
 | 8 | Last spot: distanceToNext/walkingTimeToNext = null | Lines 37-39 | ✅ Match |
 | 9 | (not in design) Zero-coordinate guard | Lines 47-49, returns null for (0,0) coords | ⚠️ Added |
 
-### 2.2 `src/components/curation/RouteSpotList.tsx`
+### 2.2 `src/components/curation/SpotLineSpotList.tsx`
 
 | # | Design Item | Implementation | Status |
 |---|-------------|----------------|--------|
 | 10 | ChevronUp/Down removed, GripVertical handle added | GripVertical imported (line 17), rendered as drag handle (line 84) | ✅ Match |
 | 11 | DndContext + SortableContext applied | Lines 2-16 imports, lines 212-227 usage | ✅ Match |
 | 12 | Each card wrapped with `useSortable({ id: item.spot.id })` | Line 58 | ✅ Match |
-| 13 | `distances` prop added to RouteSpotListProps | Line 29 | ✅ Match |
+| 13 | `distances` prop added to SpotLineSpotListProps | Line 29 | ✅ Match |
 | 14 | Auto-calculated distance/walking badge (read-only) | Lines 138-172, displays `formatDistance(autoDist)` + walking minutes | ✅ Match |
 | 15 | Manual override: badge click -> input | Click toggles `overrideWalking` state (line 165), shows number input (lines 146-151) | ✅ Match |
 | 16 | PointerSensor with activationConstraint distance: 5 | Line 179 | ✅ Match |
@@ -81,7 +81,7 @@ Phase 2B Route Builder UX 개선 구현 완료 후, Design 문서와 실제 코�
 | 31 | Import `calculateRouteDistances` from `../utils/geo` | Line 12 | ✅ Match |
 | 32 | `useMemo` for distances, recalculate on items change | Line 32 `useMemo(() => calculateRouteDistances(items), [items])` | ✅ Match |
 | 33 | RouteSummary placed below Route metadata form | Lines 148-157, after metadata `<div>` (line 102-145) | ✅ Match |
-| 34 | RouteSpotList receives `distances` prop | Line 173 | ✅ Match |
+| 34 | SpotLineSpotList receives `distances` prop | Line 173 | ✅ Match |
 | 35 | Submit: manual override > auto > undefined | Line 77: `item.meta.walkingTimeToNext \|\| auto?.walkingTimeToNext \|\| undefined` | ✅ Match |
 
 ---

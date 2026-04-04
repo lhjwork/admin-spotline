@@ -2,14 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import DataTable from "../components/DataTable";
-import { routeAPI } from "../services/v2/routeAPI";
+import { spotLineAPI } from "../services/v2/spotLineAPI";
 import { toDataTablePagination } from "../types/v2";
-import type { RouteTheme } from "../types/v2";
-import { AREAS, ROUTE_THEMES } from "../constants";
+import type { SpotLineTheme } from "../types/v2";
+import { AREAS, SPOTLINE_THEMES } from "../constants";
 import { Plus, Eye, Pencil, Trash2 } from "lucide-react";
-import RouteDetailModal from "../components/curation/RouteDetailModal";
+import SpotLineDetailModal from "../components/curation/SpotLineDetailModal";
 
-export default function RouteManagement() {
+export default function SpotLineManagement() {
   const [page, setPage] = useState(1);
   const [areaFilter, setAreaFilter] = useState("");
   const [themeFilter, setThemeFilter] = useState("");
@@ -29,25 +29,25 @@ export default function RouteManagement() {
   }, [searchInput]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["routes", page, areaFilter, themeFilter, keyword],
-    queryFn: () => routeAPI.getPopular({
+    queryKey: ["spotLines", page, areaFilter, themeFilter, keyword],
+    queryFn: () => spotLineAPI.getPopular({
       page,
       size: 20,
       area: areaFilter || undefined,
-      theme: (themeFilter as RouteTheme) || undefined,
+      theme: (themeFilter as SpotLineTheme) || undefined,
       keyword: keyword || undefined,
     }),
     placeholderData: keepPreviousData,
   });
 
   const springPage = data?.data;
-  const routes = springPage?.content ?? [];
+  const spotLines = springPage?.content ?? [];
   const pagination = springPage ? toDataTablePagination(springPage) : null;
 
   const handleDelete = async (slug: string) => {
-    if (!window.confirm("이 Route를 삭제하시겠습니까?")) return;
-    await routeAPI.delete(slug);
-    queryClient.invalidateQueries({ queryKey: ["routes"] });
+    if (!window.confirm("이 SpotLine을 삭제하시겠습니까?")) return;
+    await spotLineAPI.delete(slug);
+    queryClient.invalidateQueries({ queryKey: ["spotLines"] });
     setDetailSlug(null);
   };
 
@@ -56,9 +56,9 @@ export default function RouteManagement() {
     {
       key: "theme",
       label: "테마",
-      render: (val: RouteTheme) => (
+      render: (val: SpotLineTheme) => (
         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
-          {ROUTE_THEMES[val] ?? val}
+          {SPOTLINE_THEMES[val] ?? val}
         </span>
       ),
     },
@@ -76,14 +76,14 @@ export default function RouteManagement() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Route 관리</h1>
-          <p className="text-sm text-gray-500 mt-1">생성된 Route 목록을 관리합니다</p>
+          <h1 className="text-2xl font-bold text-gray-900">SpotLine 관리</h1>
+          <p className="text-sm text-gray-500 mt-1">생성된 SpotLine 목록을 관리합니다</p>
         </div>
         <button
-          onClick={() => navigate("/routes/new")}
+          onClick={() => navigate("/spotlines/new")}
           className="flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
         >
-          <Plus className="h-4 w-4 mr-1" /> 새 Route
+          <Plus className="h-4 w-4 mr-1" /> 새 SpotLine
         </button>
       </div>
 
@@ -110,7 +110,7 @@ export default function RouteManagement() {
           className="px-3 py-2 border border-gray-300 rounded-md text-sm"
         >
           <option value="">전체 테마</option>
-          {Object.entries(ROUTE_THEMES).map(([v, l]) => (
+          {Object.entries(SPOTLINE_THEMES).map(([v, l]) => (
             <option key={v} value={v}>{l}</option>
           ))}
         </select>
@@ -121,7 +121,7 @@ export default function RouteManagement() {
 
       <DataTable
         columns={columns}
-        data={routes}
+        data={spotLines}
         loading={isLoading}
         pagination={pagination}
         onPageChange={setPage}
@@ -134,7 +134,7 @@ export default function RouteManagement() {
               <Eye className="h-4 w-4 mr-2" /> 상세 보기
             </button>
             <button
-              onClick={() => navigate(`/routes/${row.slug}/edit`)}
+              onClick={() => navigate(`/spotlines/${row.slug}/edit`)}
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
             >
               <Pencil className="h-4 w-4 mr-2" /> 수정
@@ -149,12 +149,12 @@ export default function RouteManagement() {
         )}
       />
 
-      {/* Route 상세 모달 */}
+      {/* SpotLine 상세 모달 */}
       {detailSlug && (
-        <RouteDetailModal
+        <SpotLineDetailModal
           slug={detailSlug}
           onClose={() => setDetailSlug(null)}
-          onEdit={(s) => { setDetailSlug(null); navigate(`/routes/${s}/edit`); }}
+          onEdit={(s) => { setDetailSlug(null); navigate(`/spotlines/${s}/edit`); }}
           onDelete={(s) => handleDelete(s)}
         />
       )}

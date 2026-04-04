@@ -99,12 +99,12 @@ A-5 App.tsx 라우트 추가
 ## 4. 핵심 설계 결정
 
 ### 4.1 Update 전략: Spots 교체 방식
-- Route의 spots 변경 시 기존 RouteSpot을 전부 삭제 후 새로 생성 (replace all)
-- 이유: RouteSpot 순서/메타 변경이 빈번하므로 patch보다 replace가 단순하고 안전
+- Route의 spots 변경 시 기존 SpotLineSpot을 전부 삭제 후 새로 생성 (replace all)
+- 이유: SpotLineSpot 순서/메타 변경이 빈번하므로 patch보다 replace가 단순하고 안전
 
 ### 4.2 Delete 전략: Soft Delete
 - `isActive = false` 설정 (Spot과 동일 패턴)
-- 연관 RouteSpot은 삭제하지 않음 (Route 복구 가능성)
+- 연관 SpotLineSpot은 삭제하지 않음 (Route 복구 가능성)
 
 ### 4.3 수정 UI: 별도 페이지 (RouteBuilder 재활용)
 - RouteBuilder에 "edit mode" 플래그 추가

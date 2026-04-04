@@ -156,7 +156,7 @@ None. All 10 design checklist items fully implemented.
 
 4. **Soft Delete Strategy**: Following the Spot CRUD precedent (isActive=false) ensured consistency in domain logic and recovery capability without permanent data loss.
 
-5. **Spot Mapping Function**: The `toSpotDetail()` utility in RouteBuilder successfully bridged `RouteSpotDetail` (from API response) to `SpotDetailResponse` (required by RouteSpotList component), enabling seamless edit mode initialization.
+5. **Spot Mapping Function**: The `toSpotDetail()` utility in RouteBuilder successfully bridged `SpotLineSpotDetail` (from API response) to `SpotDetailResponse` (required by SpotLineSpotList component), enabling seamless edit mode initialization.
 
 6. **Query Invalidation**: Separate `createMutation` and `updateMutation` with targeted queryClient invalidation (`["routes"]` and `["route", slug]`) ensures cache coherency without excessive refetching.
 
@@ -207,11 +207,11 @@ public RouteDetailResponse update(String slug, UpdateRouteRequest request) {
         int totalDuration = 0;
         int totalDistance = 0;
         for (int i = 0; i < request.getSpots().size(); i++) {
-            CreateRouteRequest.RouteSpotRequest spotReq = request.getSpots().get(i);
+            CreateRouteRequest.SpotLineSpotRequest spotReq = request.getSpots().get(i);
             Spot spot = spotRepository.findById(spotReq.getSpotId())
                     .orElseThrow(() -> new ResourceNotFoundException("Spot", spotReq.getSpotId().toString()));
 
-            RouteSpot routeSpot = RouteSpot.builder()
+            SpotLineSpot routeSpot = SpotLineSpot.builder()
                     .route(route)
                     .spot(spot)
                     .spotOrder(spotReq.getOrder() != null ? spotReq.getOrder() : i + 1)
@@ -281,7 +281,7 @@ const mutation = isEditMode ? updateMutation : createMutation;
 - useParams for slug detection
 - Conditional useQuery with enabled flag
 - initialized guard prevents re-initialization on re-renders
-- toSpotDetail mapper bridges RouteSpotDetail to SpotDetailResponse
+- toSpotDetail mapper bridges SpotLineSpotDetail to SpotDetailResponse
 - Separate mutations with targeted cache invalidation
 
 ---
@@ -295,7 +295,7 @@ const mutation = isEditMode ? updateMutation : createMutation;
 | UpdateRouteRequest.java | ✅ Integrated | Compiled into JAR |
 | RouteService.update/delete | ✅ Integrated | @Transactional, orphanRemoval working |
 | RouteController endpoints | ✅ Integrated | PUT/DELETE properly routed, @Valid validation |
-| Database cascade | ✅ Working | RouteSpot orphanRemoval verified |
+| Database cascade | ✅ Working | SpotLineSpot orphanRemoval verified |
 
 ### Admin Frontend Integration
 
@@ -378,7 +378,7 @@ npm run build
 |------|:----------:|:------:|------------|
 | Data integrity on spots.clear() | Low | High | JPA orphanRemoval handles cascading; @Transactional ensures atomicity |
 | Concurrent edits to same Route | Low | Medium | Add optimistic locking (version field) in Phase 8 if needed |
-| Large spot lists (100+ spots) | Low | Low | RouteSpotList pagination already handles large lists |
+| Large spot lists (100+ spots) | Low | Low | SpotLineSpotList pagination already handles large lists |
 | Cache coherency issues | Low | Low | QueryClient invalidation strategy targets all affected keys |
 
 ---

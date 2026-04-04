@@ -1,30 +1,30 @@
 import { useQuery } from "@tanstack/react-query";
 import { X, Pencil, Trash2, MapPin, Clock, Route as RouteIcon } from "lucide-react";
-import { routeAPI } from "../../services/v2/routeAPI";
-import { ROUTE_THEMES } from "../../constants";
-import type { RouteTheme } from "../../types/v2";
+import { spotLineAPI } from "../../services/v2/spotLineAPI";
+import { SPOTLINE_THEMES } from "../../constants";
+import type { SpotLineTheme } from "../../types/v2";
 
-interface RouteDetailModalProps {
+interface SpotLineDetailModalProps {
   slug: string;
   onClose: () => void;
   onEdit: (slug: string) => void;
   onDelete: (slug: string) => void;
 }
 
-export default function RouteDetailModal({ slug, onClose, onEdit, onDelete }: RouteDetailModalProps) {
+export default function SpotLineDetailModal({ slug, onClose, onEdit, onDelete }: SpotLineDetailModalProps) {
   const { data, isLoading } = useQuery({
-    queryKey: ["route", slug],
-    queryFn: () => routeAPI.getBySlug(slug),
+    queryKey: ["spotLine", slug],
+    queryFn: () => spotLineAPI.getBySlug(slug),
   });
 
-  const route = data?.data;
+  const spotLine = data?.data;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[85vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b">
-          <h2 className="text-lg font-bold text-gray-900">Route 상세</h2>
+          <h2 className="text-lg font-bold text-gray-900">SpotLine 상세</h2>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
             <X className="h-5 w-5 text-gray-500" />
           </button>
@@ -36,30 +36,30 @@ export default function RouteDetailModal({ slug, onClose, onEdit, onDelete }: Ro
             <div className="flex items-center justify-center py-12 text-gray-400">불러오는 중...</div>
           )}
 
-          {route && (
+          {spotLine && (
             <div className="space-y-4">
               {/* 기본 정보 */}
               <div>
-                <h3 className="text-xl font-semibold text-gray-900">{route.title}</h3>
+                <h3 className="text-xl font-semibold text-gray-900">{spotLine.title}</h3>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
-                    {ROUTE_THEMES[route.theme as RouteTheme] ?? route.theme}
+                    {SPOTLINE_THEMES[spotLine.theme as SpotLineTheme] ?? spotLine.theme}
                   </span>
-                  <span className="text-sm text-gray-500">{route.area}</span>
+                  <span className="text-sm text-gray-500">{spotLine.area}</span>
                 </div>
-                {route.description && (
-                  <p className="mt-2 text-sm text-gray-600">{route.description}</p>
+                {spotLine.description && (
+                  <p className="mt-2 text-sm text-gray-600">{spotLine.description}</p>
                 )}
               </div>
 
               {/* Spots */}
-              {route.spots.length > 0 && (
+              {spotLine.spots.length > 0 && (
                 <div>
                   <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                    Spots ({route.spots.length}개)
+                    Spots ({spotLine.spots.length}개)
                   </h4>
                   <div className="border rounded-lg divide-y">
-                    {route.spots.map((s, i) => (
+                    {spotLine.spots.map((s, i) => (
                       <div key={`${s.spotId}-${i}`} className="px-3 py-2.5">
                         <div className="flex items-center gap-2">
                           <span className="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full bg-primary-100 text-primary-700 text-xs font-bold">
@@ -96,41 +96,41 @@ export default function RouteDetailModal({ slug, onClose, onEdit, onDelete }: Ro
 
               {/* 통계 */}
               <div className="grid grid-cols-3 gap-3">
-                {route.totalDistance != null && (
+                {spotLine.totalDistance != null && (
                   <div className="bg-gray-50 rounded-lg p-3 text-center">
                     <RouteIcon className="h-4 w-4 mx-auto text-gray-400 mb-1" />
                     <p className="text-sm font-semibold text-gray-900">
-                      {route.totalDistance >= 1000
-                        ? `${(route.totalDistance / 1000).toFixed(1)}km`
-                        : `${route.totalDistance}m`}
+                      {spotLine.totalDistance >= 1000
+                        ? `${(spotLine.totalDistance / 1000).toFixed(1)}km`
+                        : `${spotLine.totalDistance}m`}
                     </p>
                     <p className="text-xs text-gray-500">총 거리</p>
                   </div>
                 )}
-                {route.totalDuration != null && (
+                {spotLine.totalDuration != null && (
                   <div className="bg-gray-50 rounded-lg p-3 text-center">
                     <Clock className="h-4 w-4 mx-auto text-gray-400 mb-1" />
-                    <p className="text-sm font-semibold text-gray-900">{route.totalDuration}분</p>
+                    <p className="text-sm font-semibold text-gray-900">{spotLine.totalDuration}분</p>
                     <p className="text-xs text-gray-500">소요시간</p>
                   </div>
                 )}
                 <div className="bg-gray-50 rounded-lg p-3 text-center">
-                  <p className="text-sm font-semibold text-gray-900">{route.likesCount}</p>
+                  <p className="text-sm font-semibold text-gray-900">{spotLine.likesCount}</p>
                   <p className="text-xs text-gray-500">좋아요</p>
                 </div>
               </div>
 
               {/* 메타 */}
               <div className="text-xs text-gray-400 space-y-0.5">
-                {route.creatorName && <p>생성자: {route.creatorName}</p>}
-                <p>생성일: {new Date(route.createdAt).toLocaleDateString("ko-KR")}</p>
+                {spotLine.creatorName && <p>생성자: {spotLine.creatorName}</p>}
+                <p>생성일: {new Date(spotLine.createdAt).toLocaleDateString("ko-KR")}</p>
               </div>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        {route && (
+        {spotLine && (
           <div className="flex items-center justify-end gap-2 px-5 py-3 border-t">
             <button
               onClick={() => onEdit(slug)}

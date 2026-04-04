@@ -5,18 +5,18 @@ import { spotAPI } from "../../services/v2/spotAPI";
 import { AREAS, SPOT_CATEGORIES } from "../../constants";
 import type { SpotDetailResponse, SpotCategory } from "../../types/v2";
 
-interface RouteSpotSelectorProps {
+interface SpotLineSpotSelectorProps {
   onAdd: (spot: SpotDetailResponse) => void;
   addedSpotIds: Set<string>;
 }
 
-export default function RouteSpotSelector({ onAdd, addedSpotIds }: RouteSpotSelectorProps) {
+export default function SpotLineSpotSelector({ onAdd, addedSpotIds }: SpotLineSpotSelectorProps) {
   const [page, setPage] = useState(1);
   const [areaFilter, setAreaFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["spots-for-route", page, areaFilter, categoryFilter],
+    queryKey: ["spots-for-spotline", page, areaFilter, categoryFilter],
     queryFn: () => spotAPI.getList({
       page,
       size: 10,

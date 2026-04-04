@@ -34,10 +34,10 @@ Design Section 3 체크리스트(10개 항목) 기준으로 실제 구현 코드
 | 2 | RouteService.update() | Partial update + spots clear/rebuild + totalDuration/Distance recalc | Exact match: null-check per field, spots.clear(), loop with totalDuration/totalDistance | ✅ Match | |
 | 3 | RouteService.delete() | Soft delete via `setIsActive(false)` | Exact match | ✅ Match | |
 | 4 | RouteController PUT/DELETE | `@PutMapping("/{slug}")` + `@DeleteMapping("/{slug}")`, `@Valid` | Exact match: both endpoints with `@Valid`, correct ResponseEntity types | ✅ Match | |
-| 5 | UpdateRouteRequest type (TS) | 5 optional fields, `spots?: RouteSpotRequest[]` | Exact match | ✅ Match | |
+| 5 | UpdateRouteRequest type (TS) | 5 optional fields, `spots?: SpotLineSpotRequest[]` | Exact match | ✅ Match | |
 | 6 | routeAPI update/delete | `apiClient.put` + `apiClient.delete` on `/api/v2/routes/${slug}` | Exact match | ✅ Match | |
 | 7 | RouteDetailModal | Modal with detail view, "수정하기"/"삭제" buttons, spot list, stats | Implemented with all designed elements: header, spots list with order/duration/distance, stats grid, edit/delete footer | ✅ Match | |
-| 8 | RouteBuilder edit mode | `useParams` slug, `isEditMode`, data load via `useQuery`, form `reset`, `toSpotDetail` mapping, conditional mutation | All 6 sub-items implemented: slug param, isEditMode flag, useQuery load, useEffect reset, RouteSpotDetail mapping, conditional create/update mutation | ✅ Match | |
+| 8 | RouteBuilder edit mode | `useParams` slug, `isEditMode`, data load via `useQuery`, form `reset`, `toSpotDetail` mapping, conditional mutation | All 6 sub-items implemented: slug param, isEditMode flag, useQuery load, useEffect reset, SpotLineSpotDetail mapping, conditional create/update mutation | ✅ Match | |
 | 9 | RouteManagement actions | Eye/Pencil/Trash2 buttons, `handleDelete` with `window.confirm`, `setDetailSlug`, navigate to edit | Exact match: 3 action buttons, confirm dialog, queryClient invalidation, modal integration | ✅ Match | |
 | 10 | App.tsx route | `routes/:slug/edit` -> `RouteBuilder` | `<Route path="routes/:slug/edit" element={<RouteBuilder />} />` | ✅ Match | |
 
@@ -56,7 +56,7 @@ Design Section 3 체크리스트(10개 항목) 기준으로 실제 구현 코드
 | description | String (optional) | `private String description` | `description?: string` | ✅ |
 | theme | RouteTheme (optional) | `private RouteTheme theme` | `theme?: RouteTheme` | ✅ |
 | area | String (optional) | `private String area` | `area?: string` | ✅ |
-| spots | List\<RouteSpotRequest\> (optional) | `private List<CreateRouteRequest.RouteSpotRequest> spots` | `spots?: RouteSpotRequest[]` | ✅ |
+| spots | List\<SpotLineSpotRequest\> (optional) | `private List<CreateRouteRequest.SpotLineSpotRequest> spots` | `spots?: SpotLineSpotRequest[]` | ✅ |
 
 ### 2.4 Component Structure
 
@@ -96,17 +96,17 @@ Design Section 3 체크리스트(10개 항목) 기준으로 실제 구현 코드
 | Button text: "Route 수정" / "Route 생성" | `{isEditMode ? "Route 수정" : "Route 생성"}` | ✅ |
 | Navigate to /routes on success | `navigate("/routes")` in onSuccess | ✅ |
 
-#### RouteSpotDetail -> SpotDetailResponse Mapping (Section 4)
+#### SpotLineSpotDetail -> SpotDetailResponse Mapping (Section 4)
 
 | Design Spec | Implementation | Status |
 |-------------|---------------|:------:|
-| Minimal mapping function | `toSpotDetail(rs: RouteSpotDetail): SpotDetailResponse` | ✅ |
+| Minimal mapping function | `toSpotDetail(rs: SpotLineSpotDetail): SpotDetailResponse` | ✅ |
 | id = spotId | `id: rs.spotId` | ✅ |
 | slug = spotSlug | `slug: rs.spotSlug` | ✅ |
 | title = spotTitle | `title: rs.spotTitle` | ✅ |
 | category = spotCategory | `category: rs.spotCategory as SpotDetailResponse["category"]` | ✅ |
 | area = spotArea | `area: rs.spotArea` | ✅ |
-| Extra fields (address, lat, lng, crewNote, media) | Mapped from RouteSpotDetail extended fields | ✅ Better |
+| Extra fields (address, lat, lng, crewNote, media) | Mapped from SpotLineSpotDetail extended fields | ✅ Better |
 
 ### 2.6 Match Rate Summary
 

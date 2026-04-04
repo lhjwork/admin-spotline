@@ -33,7 +33,7 @@
 
 | 파일 | 변경 내용 |
 |------|-----------|
-| `src/components/curation/RouteSpotList.tsx` | ChevronUp/Down → dnd-kit 드래그 정렬, 자동 거리/시간 배지 추가, 수동 오버라이드 지원 |
+| `src/components/curation/SpotLineSpotList.tsx` | ChevronUp/Down → dnd-kit 드래그 정렬, 자동 거리/시간 배지 추가, 수동 오버라이드 지원 |
 | `src/pages/RouteBuilder.tsx` | useMemo로 distances 자동 계산, RouteSummary 추가, submit 시 distanceToNext 포함 |
 
 ## 2. Gap Analysis 결과

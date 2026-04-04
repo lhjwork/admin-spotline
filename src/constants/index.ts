@@ -1,4 +1,4 @@
-import type { SpotCategory, RouteTheme } from "../types/v2";
+import type { SpotCategory, SpotLineTheme } from "../types/v2";
 
 // 서울 주요 큐레이션 지역
 export const AREAS = [
@@ -24,8 +24,8 @@ export const SPOT_CATEGORIES: Record<SpotCategory, string> = {
   OTHER: "기타",
 };
 
-// Route 테마 라벨
-export const ROUTE_THEMES: Record<RouteTheme, string> = {
+// SpotLine 테마 라벨
+export const SPOTLINE_THEMES: Record<SpotLineTheme, string> = {
   DATE: "데이트",
   TRAVEL: "여행",
   WALK: "산책",

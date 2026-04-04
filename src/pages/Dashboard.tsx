@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { MapPin, Route, Search, ArrowUpRight, Eye, MessageSquare, Flag, TrendingUp } from "lucide-react";
 import { spotAPI } from "../services/v2/spotAPI";
-import { routeAPI } from "../services/v2/routeAPI";
+import { spotLineAPI } from "../services/v2/spotLineAPI";
 import { analyticsAPI } from "../services/v2/analyticsAPI";
 import { AREAS, SPOT_CATEGORIES } from "../constants";
 import type { SpotCategory } from "../types/v2";
@@ -35,9 +35,9 @@ export default function Dashboard() {
     refetchOnWindowFocus: false,
   });
 
-  const { data: routesData, isLoading: routesLoading } = useQuery({
-    queryKey: ["dashboard-routes"],
-    queryFn: () => routeAPI.getPopular({ page: 1, size: 1 }),
+  const { data: spotLinesData, isLoading: spotLinesLoading } = useQuery({
+    queryKey: ["dashboard-spotLines"],
+    queryFn: () => spotLineAPI.getPopular({ page: 1, size: 1 }),
     refetchOnWindowFocus: false,
   });
 
@@ -87,8 +87,8 @@ export default function Dashboard() {
   });
 
   const totalSpots = spotsData?.data?.totalElements ?? 0;
-  const totalRoutes = routesData?.data?.totalElements ?? 0;
-  const isLoading = spotsLoading || routesLoading;
+  const totalSpotLines = spotLinesData?.data?.totalElements ?? 0;
+  const isLoading = spotsLoading || spotLinesLoading;
 
   const areaCounts = AREAS.map((area, i) => ({
     area,
@@ -110,7 +110,7 @@ export default function Dashboard() {
   const trendChartData = (dailyTrend ?? []).map((d) => ({
     name: d.date.slice(5), // MM-DD
     Spot: d.spotCount,
-    Route: d.routeCount,
+    SpotLine: d.routeCount,
   }));
 
   if (isLoading) {
@@ -125,7 +125,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">크루 큐레이션 대시보드</h1>
-        <p className="text-sm text-gray-500 mt-1">Spot과 Route 큐레이션 현황을 한눈에 확인합니다</p>
+        <p className="text-sm text-gray-500 mt-1">Spot과 SpotLine 큐레이션 현황을 한눈에 확인합니다</p>
       </div>
 
       <CurationProgress todayCount={totalSpots} />
@@ -148,8 +148,8 @@ export default function Dashboard() {
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">총 Route 수</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{totalRoutes}</p>
+              <p className="text-sm font-medium text-gray-500">총 SpotLine 수</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{totalSpotLines}</p>
               <p className="text-xs text-gray-400 mt-1">목표: 15~20개</p>
             </div>
             <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -194,7 +194,7 @@ export default function Dashboard() {
               icon={Eye}
             />
             <MetricCard
-              title="Route 조회수"
+              title="SpotLine 조회수"
               value={platformStats.totalRouteViews.toLocaleString()}
               change=""
               icon={TrendingUp}
@@ -250,7 +250,7 @@ export default function Dashboard() {
 
           {popularRoutes && popularRoutes.length > 0 && (
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">인기 Route Top 10</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">인기 SpotLine Top 10</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -282,13 +282,13 @@ export default function Dashboard() {
 
       {/* 일별 콘텐츠 생성 트렌드 */}
       {trendChartData.length > 0 && (
-        <ChartCard title="일별 콘텐츠 생성 트렌드" subtitle="최근 30일간 Spot/Route 생성 건수">
+        <ChartCard title="일별 콘텐츠 생성 트렌드" subtitle="최근 30일간 Spot/SpotLine 생성 건수">
           <BarChartComponent
             data={trendChartData}
             xKey="name"
             bars={[
               { dataKey: "Spot", color: "#3B82F6" },
-              { dataKey: "Route", color: "#10B981" },
+              { dataKey: "SpotLine", color: "#10B981" },
             ]}
             height={300}
           />
@@ -309,12 +309,12 @@ export default function Dashboard() {
         </button>
 
         <button
-          onClick={() => navigate("/routes/new")}
+          onClick={() => navigate("/spotlines/new")}
           className="flex items-center justify-between p-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <div className="flex items-center space-x-3">
             <Route className="h-5 w-5" />
-            <span className="font-medium">Route 만들기</span>
+            <span className="font-medium">SpotLine 만들기</span>
           </div>
           <ArrowUpRight className="h-5 w-5" />
         </button>

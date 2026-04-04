@@ -1,4 +1,4 @@
-interface RouteSummaryProps {
+interface SpotLineSummaryProps {
   spotCount: number;
   totalDistanceM: number;
   totalWalkingMin: number;
@@ -18,19 +18,19 @@ function formatTime(min: number): string {
   return m > 0 ? `${h}시간 ${m}분` : `${h}시간`;
 }
 
-export default function RouteSummary({
+export default function SpotLineSummary({
   spotCount,
   totalDistanceM,
   totalWalkingMin,
   totalStayMin,
-}: RouteSummaryProps) {
+}: SpotLineSummaryProps) {
   const totalMin = totalWalkingMin + totalStayMin;
 
   if (spotCount === 0) return null;
 
   return (
     <div className="bg-blue-50 rounded-lg p-4">
-      <h4 className="text-sm font-semibold text-blue-900 mb-2">Route 요약</h4>
+      <h4 className="text-sm font-semibold text-blue-900 mb-2">SpotLine 요약</h4>
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-blue-800">
         <span>Spot {spotCount}개</span>
         <span>· 총 {formatDist(totalDistanceM)}</span>

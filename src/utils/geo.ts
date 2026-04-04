@@ -1,4 +1,4 @@
-import type { RouteSpotItem } from "../components/curation/RouteSpotList";
+import type { SpotLineSpotItem } from "../components/curation/SpotLineSpotList";
 
 const R = 6371000; // Earth radius in meters
 
@@ -29,9 +29,9 @@ export function estimateWalkingMinutes(
   return Math.round(distanceMeters / speedMPerMin);
 }
 
-/** Calculate distances and walking times for a list of route spots */
-export function calculateRouteDistances(
-  items: RouteSpotItem[],
+/** Calculate distances and walking times for a list of spotline spots */
+export function calculateSpotLineDistances(
+  items: SpotLineSpotItem[],
 ): { distanceToNext: number | null; walkingTimeToNext: number | null }[] {
   return items.map((item, i) => {
     if (i >= items.length - 1) {

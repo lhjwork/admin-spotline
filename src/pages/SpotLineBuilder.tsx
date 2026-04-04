@@ -3,29 +3,29 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { routeAPI } from "../services/v2/routeAPI";
+import { spotLineAPI } from "../services/v2/spotLineAPI";
 import type {
   SpotDetailResponse,
-  CreateRouteRequest,
-  UpdateRouteRequest,
-  RouteTheme,
-  RouteSpotDetail,
+  CreateSpotLineRequest,
+  UpdateSpotLineRequest,
+  SpotLineTheme,
+  SpotLineSpotDetail,
 } from "../types/v2";
-import { AREAS, ROUTE_THEMES } from "../constants";
-import RouteSpotSelector from "../components/curation/RouteSpotSelector";
-import RouteSpotList, { RouteSpotItem } from "../components/curation/RouteSpotList";
-import RouteSummary from "../components/curation/RouteSummary";
-import { calculateRouteDistances } from "../utils/geo";
+import { AREAS, SPOTLINE_THEMES } from "../constants";
+import SpotLineSpotSelector from "../components/curation/SpotLineSpotSelector";
+import SpotLineSpotList, { SpotLineSpotItem } from "../components/curation/SpotLineSpotList";
+import SpotLineSummary from "../components/curation/SpotLineSummary";
+import { calculateSpotLineDistances } from "../utils/geo";
 
 interface FormValues {
   title: string;
   description: string;
-  theme: RouteTheme;
+  theme: SpotLineTheme;
   area: string;
 }
 
-/** RouteSpotDetail → SpotDetailResponse 최소 매핑 */
-function toSpotDetail(rs: RouteSpotDetail): SpotDetailResponse {
+/** SpotLineSpotDetail → SpotDetailResponse 최소 매핑 */
+function toSpotDetail(rs: SpotLineSpotDetail): SpotDetailResponse {
   return {
     id: rs.spotId,
     slug: rs.spotSlug,
@@ -59,11 +59,11 @@ function toSpotDetail(rs: RouteSpotDetail): SpotDetailResponse {
   };
 }
 
-export default function RouteBuilder() {
+export default function SpotLineBuilder() {
   const { slug } = useParams<{ slug?: string }>();
   const isEditMode = !!slug;
 
-  const [items, setItems] = useState<RouteSpotItem[]>([]);
+  const [items, setItems] = useState<SpotLineSpotItem[]>([]);
   const [initialized, setInitialized] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -73,16 +73,16 @@ export default function RouteBuilder() {
   });
 
   // Edit mode: 기존 데이터 로드
-  const { data: existingRoute } = useQuery({
-    queryKey: ["route", slug],
-    queryFn: () => routeAPI.getBySlug(slug!),
+  const { data: existingSpotLine } = useQuery({
+    queryKey: ["spotLine", slug],
+    queryFn: () => spotLineAPI.getBySlug(slug!),
     enabled: isEditMode,
   });
 
   // 로드 완료 시 form + items 초기화
   useEffect(() => {
-    if (existingRoute && !initialized) {
-      const r = existingRoute.data;
+    if (existingSpotLine && !initialized) {
+      const r = existingSpotLine.data;
       reset({
         title: r.title,
         description: r.description ?? "",
@@ -105,30 +105,30 @@ export default function RouteBuilder() {
       );
       setInitialized(true);
     }
-  }, [existingRoute, initialized, reset]);
+  }, [existingSpotLine, initialized, reset]);
 
   const addedIds = new Set(items.map((i) => i.spot.id));
 
-  const distances = useMemo(() => calculateRouteDistances(items), [items]);
+  const distances = useMemo(() => calculateSpotLineDistances(items), [items]);
 
   const totalDistanceM = distances.reduce((sum, d) => sum + (d.distanceToNext ?? 0), 0);
   const totalWalkingMin = distances.reduce((sum, d) => sum + (d.walkingTimeToNext ?? 0), 0);
   const totalStayMin = items.reduce((sum, item) => sum + (item.meta.stayDuration ?? 0), 0);
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateRouteRequest) => routeAPI.create(data),
+    mutationFn: (data: CreateSpotLineRequest) => spotLineAPI.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["routes"] });
-      navigate("/routes");
+      queryClient.invalidateQueries({ queryKey: ["spotLines"] });
+      navigate("/spotlines");
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: UpdateRouteRequest) => routeAPI.update(slug!, data),
+    mutationFn: (data: UpdateSpotLineRequest) => spotLineAPI.update(slug!, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["routes"] });
-      queryClient.invalidateQueries({ queryKey: ["route", slug] });
-      navigate("/routes");
+      queryClient.invalidateQueries({ queryKey: ["spotLines"] });
+      queryClient.invalidateQueries({ queryKey: ["spotLine", slug] });
+      navigate("/spotlines");
     },
   });
 
@@ -166,7 +166,7 @@ export default function RouteBuilder() {
     if (items.length === 0) return;
 
     if (isEditMode) {
-      const req: UpdateRouteRequest = {
+      const req: UpdateSpotLineRequest = {
         title: values.title,
         description: values.description || undefined,
         theme: values.theme,
@@ -175,7 +175,7 @@ export default function RouteBuilder() {
       };
       updateMutation.mutate(req);
     } else {
-      const req: CreateRouteRequest = {
+      const req: CreateSpotLineRequest = {
         title: values.title,
         description: values.description || undefined,
         theme: values.theme,
@@ -191,25 +191,25 @@ export default function RouteBuilder() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">
-          {isEditMode ? "Route 수정" : "Route 빌더"}
+          {isEditMode ? "SpotLine 수정" : "SpotLine 빌더"}
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          {isEditMode ? "Route 정보를 수정합니다" : "Spot을 선택하여 Route를 구성합니다"}
+          {isEditMode ? "SpotLine 정보를 수정합니다" : "Spot을 선택하여 SpotLine을 구성합니다"}
         </p>
       </div>
 
       {mutation.isError && (
         <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
-          Route {isEditMode ? "수정" : "생성"}에 실패했습니다: {(mutation.error as any)?.message ?? "알 수 없는 오류"}
+          SpotLine {isEditMode ? "수정" : "생성"}에 실패했습니다: {(mutation.error as any)?.message ?? "알 수 없는 오류"}
         </div>
       )}
 
       <form onSubmit={handleSubmit(doSubmit)}>
-        {/* Route 메타데이터 */}
+        {/* SpotLine 메타데이터 */}
         <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Route 제목 *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">SpotLine 제목 *</label>
               <input
                 {...register("title", { required: "제목을 입력하세요" })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
@@ -223,7 +223,7 @@ export default function RouteBuilder() {
                 {...register("theme")}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
               >
-                {Object.entries(ROUTE_THEMES).map(([v, l]) => (
+                {Object.entries(SPOTLINE_THEMES).map(([v, l]) => (
                   <option key={v} value={v}>{l}</option>
                 ))}
               </select>
@@ -246,15 +246,15 @@ export default function RouteBuilder() {
               {...register("description")}
               rows={2}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-              placeholder="이 Route에 대한 설명..."
+              placeholder="이 SpotLine에 대한 설명..."
             />
           </div>
         </div>
 
-        {/* Route 요약 */}
+        {/* SpotLine 요약 */}
         {items.length > 0 && (
           <div className="mb-6">
-            <RouteSummary
+            <SpotLineSummary
               spotCount={items.length}
               totalDistanceM={totalDistanceM}
               totalWalkingMin={totalWalkingMin}
@@ -267,7 +267,7 @@ export default function RouteBuilder() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* 왼쪽: Spot 선택 */}
           <div className="lg:col-span-2 bg-white rounded-lg shadow-sm p-4 h-[calc(100vh-480px)] flex flex-col">
-            <RouteSpotSelector onAdd={handleAdd} addedSpotIds={addedIds} />
+            <SpotLineSpotSelector onAdd={handleAdd} addedSpotIds={addedIds} />
           </div>
 
           {/* 오른쪽: 선택된 Spot 순서 배치 */}
@@ -277,7 +277,7 @@ export default function RouteBuilder() {
                 선택된 Spot ({items.length}개)
               </h3>
             </div>
-            <RouteSpotList items={items} onChange={setItems} distances={distances} />
+            <SpotLineSpotList items={items} onChange={setItems} distances={distances} />
           </div>
         </div>
 
@@ -289,7 +289,7 @@ export default function RouteBuilder() {
             className="flex items-center px-6 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {mutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            {isEditMode ? "Route 수정" : "Route 생성"} ({items.length}개 Spot)
+            {isEditMode ? "SpotLine 수정" : "SpotLine 생성"} ({items.length}개 Spot)
           </button>
         </div>
       </form>

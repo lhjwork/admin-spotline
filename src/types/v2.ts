@@ -9,9 +9,12 @@ export type SpotCategory =
 
 export type SpotSource = "CREW" | "USER" | "QR";
 
-export type RouteTheme =
+export type SpotLineTheme =
   | "DATE" | "TRAVEL" | "WALK" | "HANGOUT"
   | "FOOD_TOUR" | "CAFE_TOUR" | "CULTURE";
+
+/** @deprecated Use SpotLineTheme instead */
+export type RouteTheme = SpotLineTheme;
 
 // ── Place API ──
 
@@ -126,9 +129,9 @@ export interface UpdateSpotRequest {
   mediaItems?: MediaItemRequest[];
 }
 
-// ── Route ──
+// ── SpotLine ──
 
-export interface RouteSpotDetail {
+export interface SpotLineSpotDetail {
   order: number;
   suggestedTime: string | null;
   stayDuration: number | null;
@@ -147,32 +150,32 @@ export interface RouteSpotDetail {
   spotMedia: string[];
 }
 
-export interface RouteDetailResponse {
+export interface SpotLineDetailResponse {
   id: string;
   slug: string;
   title: string;
   description: string | null;
-  theme: RouteTheme;
+  theme: SpotLineTheme;
   area: string;
   totalDuration: number | null;
   totalDistance: number | null;
-  spots: RouteSpotDetail[];
+  spots: SpotLineSpotDetail[];
   likesCount: number;
   savesCount: number;
   replicationsCount: number;
   completionsCount: number;
   creatorType: string;
   creatorName: string | null;
-  parentRouteId: string | null;
+  parentSpotLineId: string | null;
   variationsCount: number;
   createdAt: string;
 }
 
-export interface RoutePreviewResponse {
+export interface SpotLinePreviewResponse {
   id: string;
   slug: string;
   title: string;
-  theme: RouteTheme;
+  theme: SpotLineTheme;
   area: string;
   totalDuration: number | null;
   totalDistance: number | null;
@@ -180,7 +183,7 @@ export interface RoutePreviewResponse {
   likesCount: number;
 }
 
-export interface RouteSpotRequest {
+export interface SpotLineSpotRequest {
   spotId: string;
   order?: number;
   suggestedTime?: string;
@@ -190,22 +193,22 @@ export interface RouteSpotRequest {
   transitionNote?: string;
 }
 
-export interface CreateRouteRequest {
+export interface CreateSpotLineRequest {
   title: string;
   description?: string;
-  theme: RouteTheme;
+  theme: SpotLineTheme;
   area: string;
-  spots: RouteSpotRequest[];
-  parentRouteId?: string;
+  spots: SpotLineSpotRequest[];
+  parentSpotLineId?: string;
   creatorName?: string;
 }
 
-export interface UpdateRouteRequest {
+export interface UpdateSpotLineRequest {
   title?: string;
   description?: string;
-  theme?: RouteTheme;
+  theme?: SpotLineTheme;
   area?: string;
-  spots?: RouteSpotRequest[];
+  spots?: SpotLineSpotRequest[];
 }
 
 // ── Partner ──

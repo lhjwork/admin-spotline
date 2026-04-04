@@ -15,17 +15,17 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Trash2 } from "lucide-react";
-import type { SpotDetailResponse, RouteSpotRequest } from "../../types/v2";
+import type { SpotDetailResponse, SpotLineSpotRequest } from "../../types/v2";
 import { SPOT_CATEGORIES } from "../../constants";
 
-export interface RouteSpotItem {
+export interface SpotLineSpotItem {
   spot: SpotDetailResponse;
-  meta: RouteSpotRequest;
+  meta: SpotLineSpotRequest;
 }
 
-interface RouteSpotListProps {
-  items: RouteSpotItem[];
-  onChange: (items: RouteSpotItem[]) => void;
+interface SpotLineSpotListProps {
+  items: SpotLineSpotItem[];
+  onChange: (items: SpotLineSpotItem[]) => void;
   distances: { distanceToNext: number | null; walkingTimeToNext: number | null }[];
 }
 
@@ -40,11 +40,11 @@ function SortableSpotCard({
   onRemove,
   onUpdateMeta,
 }: {
-  item: RouteSpotItem;
+  item: SpotLineSpotItem;
   index: number;
   distance: { distanceToNext: number | null; walkingTimeToNext: number | null };
   onRemove: () => void;
-  onUpdateMeta: (field: keyof RouteSpotRequest, value: string | number) => void;
+  onUpdateMeta: (field: keyof SpotLineSpotRequest, value: string | number) => void;
 }) {
   const [overrideWalking, setOverrideWalking] = useState(false);
 
@@ -174,7 +174,7 @@ function SortableSpotCard({
   );
 }
 
-export default function RouteSpotList({ items, onChange, distances }: RouteSpotListProps) {
+export default function SpotLineSpotList({ items, onChange, distances }: SpotLineSpotListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
@@ -194,7 +194,7 @@ export default function RouteSpotList({ items, onChange, distances }: RouteSpotL
     onChange(next.map((item, i) => ({ ...item, meta: { ...item.meta, order: i + 1 } })));
   };
 
-  const updateMeta = (index: number, field: keyof RouteSpotRequest, value: string | number) => {
+  const updateMeta = (index: number, field: keyof SpotLineSpotRequest, value: string | number) => {
     const next = [...items];
     const current = next[index]!;
     next[index] = { ...current, meta: { ...current.meta, [field]: value } };

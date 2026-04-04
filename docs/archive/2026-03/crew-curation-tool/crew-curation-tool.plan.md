@@ -45,8 +45,8 @@ admin-spotLine에 이미 구현된 기능:
 - `SpotFormPanel` — Spot 등록 폼 (react-hook-form)
 - `SpotMediaUpload` — 미디어 업로드
 - `SpotEditModal` — Spot 수정 모달
-- `RouteSpotSelector` — Route에 Spot 추가
-- `RouteSpotList` — Route Spot 순서 관리
+- `SpotLineSpotSelector` — Route에 Spot 추가
+- `SpotLineSpotList` — Route Spot 순서 관리
 - `CurationProgress` — 목표 대비 진척도 바
 
 **Constants**:
