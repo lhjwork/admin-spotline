@@ -301,6 +301,27 @@ export interface BlogDetailResponse extends BlogListItem {
   updatedAt: string;
 }
 
+// ── User (Admin) ──
+
+export type UserStatus = "ACTIVE" | "SUSPENDED";
+
+export interface UserAdminItem {
+  id: string;
+  email: string;
+  nickname: string;
+  avatar: string | null;
+  bio: string | null;
+  role: string;
+  suspended: boolean;
+  followersCount: number;
+  followingCount: number;
+  spotsCount: number;
+  spotLinesCount: number;
+  blogsCount: number;
+  createdAt: string;
+  suspendedAt: string | null;
+}
+
 // ── Spring Page (pagination) ──
 
 export interface SpringPage<T> {

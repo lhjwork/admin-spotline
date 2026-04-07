@@ -14,6 +14,7 @@ import PartnerDetail from "./pages/PartnerDetail";
 import PartnerEdit from "./pages/PartnerEdit";
 import ModerationQueue from "./pages/ModerationQueue";
 import BlogManagement from "./pages/BlogManagement";
+import UserManagement from "./pages/UserManagement";
 import BlogDetail from "./pages/BlogDetail";
 import { ReactNode } from "react";
 import type { AdminRole } from "./types";
@@ -81,6 +82,9 @@ function App() {
           } />
           <Route path="partners/:id" element={
             <ProtectedRoute requiredRole="admin"><PartnerDetail /></ProtectedRoute>
+          } />
+          <Route path="users" element={
+            <ProtectedRoute requiredRole="admin"><UserManagement /></ProtectedRoute>
           } />
           <Route path="moderation" element={
             <ProtectedRoute requiredRole="admin"><ModerationQueue /></ProtectedRoute>

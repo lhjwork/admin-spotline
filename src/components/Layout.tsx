@@ -34,6 +34,7 @@ const navigation: NavigationItem[] = [
   { name: "파트너 관리", href: "/partners", icon: Store, section: "partner", minRole: "admin" },
 
   // 시스템 섹션
+  { name: "유저 관리", href: "/users", icon: Users, section: "system", minRole: "admin" },
   { name: "모더레이션", href: "/moderation", icon: Shield, section: "system", minRole: "admin" },
   { name: "어드민 관리", href: "/admins", icon: Users, section: "system", minRole: "super_admin" },
 ];
