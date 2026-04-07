@@ -270,6 +270,37 @@ export interface PartnerAnalyticsResponse {
   dailyTrend: { date: string; scans: number }[];
 }
 
+// ── Blog ──
+
+export type BlogStatus = "DRAFT" | "PUBLISHED";
+
+export interface BlogListItem {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string | null;
+  coverImageUrl: string | null;
+  status: BlogStatus;
+  userName: string;
+  userAvatarUrl: string | null;
+  spotLineTitle: string;
+  spotLineArea: string;
+  spotCount: number;
+  viewsCount: number;
+  likesCount: number;
+  publishedAt: string | null;
+  createdAt: string;
+}
+
+export interface BlogDetailResponse extends BlogListItem {
+  spotLineId: string;
+  spotLineSlug: string;
+  userId: string;
+  savesCount: number;
+  commentsCount: number;
+  updatedAt: string;
+}
+
 // ── Spring Page (pagination) ──
 
 export interface SpringPage<T> {

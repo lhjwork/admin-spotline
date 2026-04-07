@@ -13,6 +13,8 @@ import PartnerRegistration from "./pages/PartnerRegistration";
 import PartnerDetail from "./pages/PartnerDetail";
 import PartnerEdit from "./pages/PartnerEdit";
 import ModerationQueue from "./pages/ModerationQueue";
+import BlogManagement from "./pages/BlogManagement";
+import BlogDetail from "./pages/BlogDetail";
 import { ReactNode } from "react";
 import type { AdminRole } from "./types";
 import { hasMinRole } from "./utils/roles";
@@ -62,6 +64,12 @@ function App() {
           <Route path="spotlines/new" element={<SpotLineBuilder />} />
           <Route path="spotlines/:slug/edit" element={<SpotLineBuilder />} />
           <Route path="spotlines" element={<SpotLineManagement />} />
+          <Route path="blogs" element={
+            <ProtectedRoute requiredRole="admin"><BlogManagement /></ProtectedRoute>
+          } />
+          <Route path="blogs/:slug" element={
+            <ProtectedRoute requiredRole="admin"><BlogDetail /></ProtectedRoute>
+          } />
           <Route path="partners" element={
             <ProtectedRoute requiredRole="admin"><PartnerManagement /></ProtectedRoute>
           } />

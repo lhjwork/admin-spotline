@@ -2,7 +2,7 @@ import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
   LayoutDashboard, Search, MapPin, Route, List,
-  Users, LogOut, Menu, X, Store, Shield, LucideIcon,
+  Users, LogOut, Menu, X, Store, Shield, FileText, LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -26,6 +26,9 @@ const navigation: NavigationItem[] = [
   { name: "Spot 관리", href: "/spots", icon: MapPin, section: "curation" },
   { name: "SpotLine 빌더", href: "/spotlines/new", icon: Route, section: "curation" },
   { name: "SpotLine 관리", href: "/spotlines", icon: List, section: "curation" },
+
+  // 콘텐츠 섹션
+  { name: "블로그 관리", href: "/blogs", icon: FileText, section: "content", minRole: "admin" },
 
   // 파트너 섹션
   { name: "파트너 관리", href: "/partners", icon: Store, section: "partner", minRole: "admin" },
@@ -107,6 +110,7 @@ export default function Layout() {
         <NavLink key={item.name} item={item} onClick={onNav} />
       ))}
       <NavSection title="큐레이션" section="curation" onClick={onNav} />
+      <NavSection title="콘텐츠" section="content" onClick={onNav} />
       <NavSection title="파트너" section="partner" onClick={onNav} />
       <NavSection title="시스템" section="system" onClick={onNav} badgeMap={systemBadgeMap} />
     </>
