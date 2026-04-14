@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MapPin, ExternalLink, Zap, Layers, PenTool } from "lucide-react";
 import { spotAPI } from "../services/v2/spotAPI";
 import type { CreateSpotRequest, PlaceInfo } from "../types/v2";
+import { useRegisteredPlaceIds, useInvalidateRegisteredPlaceIds } from "../hooks/useRegisteredPlaceIds";
 import PlaceSearchPanel from "../components/curation/PlaceSearchPanel";
 import SpotFormPanel from "../components/curation/SpotFormPanel";
 import QuickSpotForm from "../components/curation/QuickSpotForm";
@@ -25,6 +26,8 @@ const MODE_TABS: { key: CurationMode; label: string; icon: typeof Zap }[] = [
 
 export default function SpotCuration() {
   const queryClient = useQueryClient();
+  const { isRegistered, getRegisteredSpot } = useRegisteredPlaceIds();
+  const invalidateRegisteredPlaceIds = useInvalidateRegisteredPlaceIds();
   const [mode, setMode] = useState<CurationMode>("quick");
   const [selectedPlace, setSelectedPlace] = useState<PlaceInfo | null>(null);
   const [checkedPlaces, setCheckedPlaces] = useState<PlaceInfo[]>([]);
@@ -44,6 +47,7 @@ export default function SpotCuration() {
     mutationFn: (data: CreateSpotRequest) => spotAPI.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["spots"] });
+      invalidateRegisteredPlaceIds();
       setSelectedPlace(null);
     },
   });
@@ -186,14 +190,21 @@ export default function SpotCuration() {
 
           {/* 우측: Quick 또는 Bulk 패널 */}
           <div className="lg:sticky lg:top-6 lg:self-start">
-            {mode === "quick" && selectedPlace && (
-              <QuickSpotForm
-                place={selectedPlace}
-                onSubmit={handleQuickSubmit}
-                onCancel={() => setSelectedPlace(null)}
-                saving={createMutation.isPending}
-              />
-            )}
+            {mode === "quick" && selectedPlace && (() => {
+              const reg = isRegistered(selectedPlace.provider, selectedPlace.placeId);
+              const existingSpot = reg ? getRegisteredSpot(selectedPlace.provider, selectedPlace.placeId) : undefined;
+              return (
+                <QuickSpotForm
+                  place={selectedPlace}
+                  onSubmit={handleQuickSubmit}
+                  onCancel={() => setSelectedPlace(null)}
+                  saving={createMutation.isPending}
+                  registered={reg}
+                  registeredSpotTitle={existingSpot?.title}
+                  registeredSpotSlug={existingSpot?.slug}
+                />
+              );
+            })()}
             {mode === "quick" && !selectedPlace && (
               <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
                 <Zap className="h-10 w-10 text-gray-300 mx-auto mb-3" />

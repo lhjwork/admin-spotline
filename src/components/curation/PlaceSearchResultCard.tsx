@@ -9,6 +9,9 @@ interface PlaceSearchResultCardProps {
   checked?: boolean;
   onCheckChange?: (checked: boolean) => void;
   onQuickRegister?: (place: PlaceInfo) => void;
+  registered?: boolean;
+  registeredSpotTitle?: string;
+  registeredSpotSlug?: string;
 }
 
 export default function PlaceSearchResultCard({
@@ -19,11 +22,18 @@ export default function PlaceSearchResultCard({
   checked,
   onCheckChange,
   onQuickRegister,
+  registered,
+  registeredSpotTitle,
+  registeredSpotSlug,
 }: PlaceSearchResultCardProps) {
   return (
     <div
       className={`border rounded-lg p-3 cursor-pointer transition-colors ${
-        selected ? "border-primary-500 bg-primary-50" : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+        registered
+          ? "border-amber-300 bg-amber-50"
+          : selected
+            ? "border-primary-500 bg-primary-50"
+            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
       }`}
       onClick={() => {
         if (bulkMode && onCheckChange) {
@@ -51,19 +61,29 @@ export default function PlaceSearchResultCard({
             {place.category && (
               <span className="text-xs text-gray-500">{place.category}</span>
             )}
+            {registered && registeredSpotTitle && (
+              <p className="text-xs text-amber-600 truncate">기존: {registeredSpotTitle}</p>
+            )}
           </div>
         </div>
-        {place.url && (
-          <a
-            href={place.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="text-gray-400 hover:text-primary-500 ml-2"
-          >
-            <ExternalLink className="h-4 w-4" />
-          </a>
-        )}
+        <div className="flex items-center gap-1">
+          {registered && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-500 text-white">
+              등록됨
+            </span>
+          )}
+          {place.url && (
+            <a
+              href={place.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="text-gray-400 hover:text-primary-500 ml-2"
+            >
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          )}
+        </div>
       </div>
 
       <div className="mt-1 space-y-0.5">
@@ -95,9 +115,9 @@ export default function PlaceSearchResultCard({
           {bulkMode && onQuickRegister && (
             <button
               onClick={(e) => { e.stopPropagation(); onQuickRegister(place); }}
-              className="text-xs font-medium text-primary-600 hover:text-primary-700"
+              className={`text-xs font-medium ${registered ? "text-amber-600 hover:text-amber-700" : "text-primary-600 hover:text-primary-700"}`}
             >
-              바로 등록
+              {registered ? "중복 등록" : "바로 등록"}
             </button>
           )}
           {!bulkMode && (

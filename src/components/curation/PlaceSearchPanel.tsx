@@ -5,6 +5,7 @@ import { useDebounce } from "../../hooks/useDebounce";
 import { placeAPI } from "../../services/v2/placeAPI";
 import type { PlaceInfo } from "../../types/v2";
 import PlaceSearchResultCard from "./PlaceSearchResultCard";
+import { useRegisteredPlaceIds } from "../../hooks/useRegisteredPlaceIds";
 
 interface PlaceSearchPanelProps {
   onSelect: (place: PlaceInfo) => void;
@@ -28,6 +29,7 @@ export default function PlaceSearchPanel({
   const debouncedQuery = useDebounce(query, 400);
 
   const checkedIds = new Set(checkedPlaces.map((p) => `${p.provider}-${p.placeId}`));
+  const { isRegistered, getRegisteredSpot } = useRegisteredPlaceIds();
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["placeSearch", debouncedQuery, provider],
@@ -111,6 +113,14 @@ export default function PlaceSearchPanel({
         </div>
       </div>
 
+      {/* 등록됨 카운트 */}
+      {places.length > 0 && (() => {
+        const registeredCount = places.filter((p) => isRegistered(p.provider, p.placeId)).length;
+        return registeredCount > 0 ? (
+          <p className="text-xs text-amber-600 font-medium mb-2">{registeredCount}개 이미 등록됨</p>
+        ) : null;
+      })()}
+
       {/* 결과 목록 */}
       <div className="flex-1 overflow-y-auto space-y-2">
         {isLoading && (
@@ -133,6 +143,8 @@ export default function PlaceSearchPanel({
 
         {places.map((place) => {
           const key = `${place.provider}-${place.placeId}`;
+          const registered = isRegistered(place.provider, place.placeId);
+          const existingSpot = registered ? getRegisteredSpot(place.provider, place.placeId) : undefined;
           return (
             <PlaceSearchResultCard
               key={key}
@@ -143,6 +155,9 @@ export default function PlaceSearchPanel({
               checked={checkedIds.has(key)}
               onCheckChange={(checked) => handleCheckChange(place, checked)}
               onQuickRegister={onQuickRegister}
+              registered={registered}
+              registeredSpotTitle={existingSpot?.title}
+              registeredSpotSlug={existingSpot?.slug}
             />
           );
         })}
