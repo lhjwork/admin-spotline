@@ -7,3 +7,4 @@
 | admin-tech-modernization | 100% | 2026-04-11 | plan, design, analysis, report |
 | admin-legacy-cleanup | 100% | 2026-04-04 | plan, design, analysis, report |
 | admin-analytics-bi | 100% | 2026-04-14 | plan, design, analysis, report |
+| admin-spot-bulk-curation | 98% | 2026-04-14 | plan, analysis, report |
