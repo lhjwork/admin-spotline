@@ -78,10 +78,35 @@ export default function PlaceSearchPanel({
               </button>
             ))}
           </div>
-          {bulkMode && checkedPlaces.length > 0 && (
-            <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
-              {checkedPlaces.length}개 선택됨
-            </span>
+          {bulkMode && (
+            <div className="flex items-center gap-2">
+              {places.length > 0 && (
+                <button
+                  onClick={() => {
+                    if (!onCheckedChange) return;
+                    const allChecked = places.every((p) => checkedIds.has(`${p.provider}-${p.placeId}`));
+                    if (allChecked) {
+                      // Deselect all visible results
+                      const visibleKeys = new Set(places.map((p) => `${p.provider}-${p.placeId}`));
+                      onCheckedChange(checkedPlaces.filter((p) => !visibleKeys.has(`${p.provider}-${p.placeId}`)));
+                    } else {
+                      // Select all visible results (add new ones, keep existing)
+                      const existing = new Set(checkedPlaces.map((p) => `${p.provider}-${p.placeId}`));
+                      const newPlaces = places.filter((p) => !existing.has(`${p.provider}-${p.placeId}`));
+                      onCheckedChange([...checkedPlaces, ...newPlaces]);
+                    }
+                  }}
+                  className="text-xs text-primary-600 hover:text-primary-800 font-medium"
+                >
+                  {places.every((p) => checkedIds.has(`${p.provider}-${p.placeId}`)) ? "전체 해제" : "전체 선택"}
+                </button>
+              )}
+              {checkedPlaces.length > 0 && (
+                <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
+                  {checkedPlaces.length}개 선택됨
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>

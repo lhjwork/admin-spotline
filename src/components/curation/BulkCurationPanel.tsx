@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { X, Loader2 } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { PlaceInfo } from "../../types/v2";
+import { useQueryClient } from "@tanstack/react-query";
+import type { PlaceInfo, BulkMeta, BatchStatus } from "../../types/v2";
 import { SPOT_CATEGORIES } from "../../constants";
 import { placeToSpotRequest } from "../../utils/placeConverter";
 import { extractAreaFromAddress, mapPlaceCategoryToSpotCategory } from "../../constants";
-import { spotAPI } from "../../services/v2/spotAPI";
+import { bulkCreateBatched } from "../../services/v2/spotAPI";
+import BulkActionBar from "./BulkActionBar";
+import BulkProgressModal from "./BulkProgressModal";
 import BulkResultToast from "./BulkResultToast";
 
 interface BulkCurationPanelProps {
@@ -14,36 +16,95 @@ interface BulkCurationPanelProps {
   onRemove: (placeId: string) => void;
 }
 
+const DEFAULT_BULK_META: BulkMeta = {
+  tags: [],
+  category: null,
+  area: null,
+  crewNote: "",
+};
+
 export default function BulkCurationPanel({ places, onComplete, onRemove }: BulkCurationPanelProps) {
   const queryClient = useQueryClient();
-  const [defaultNote, setDefaultNote] = useState("");
+  const [bulkMeta, setBulkMeta] = useState<BulkMeta>(DEFAULT_BULK_META);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [result, setResult] = useState<{ total: number; success: number } | null>(null);
-
-  const mutation = useMutation({
-    mutationFn: async () => {
-      const requests = places.map((place) => {
-        const key = `${place.provider}-${place.placeId}`;
-        const note = notes[key]?.trim() || defaultNote.trim() || undefined;
-        return placeToSpotRequest(place, note);
-      });
-      return spotAPI.bulkCreate(requests);
-    },
-    onSuccess: (res) => {
-      const successCount = Array.isArray(res.data) ? res.data.length : places.length;
-      setResult({ total: places.length, success: successCount });
-      queryClient.invalidateQueries({ queryKey: ["spots"] });
-      if (successCount === places.length) {
-        onComplete();
-      }
-    },
-    onError: () => {
-      setResult({ total: places.length, success: 0 });
-    },
-  });
+  const [batches, setBatches] = useState<BatchStatus[]>([]);
+  const [showProgress, setShowProgress] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   const updateNote = (key: string, value: string) => {
     setNotes((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const buildRequests = (placesToConvert: PlaceInfo[] = places) => {
+    return placesToConvert.map((place) => {
+      const key = `${place.provider}-${place.placeId}`;
+      const note = notes[key]?.trim() || bulkMeta.crewNote.trim() || undefined;
+      const tags = bulkMeta.tags.length > 0 ? bulkMeta.tags : undefined;
+      const req = placeToSpotRequest(place, note, tags);
+      // Apply bulk overrides (placeToSpotRequest doesn't accept category/area)
+      if (bulkMeta.category) req.category = bulkMeta.category;
+      if (bulkMeta.area) req.area = bulkMeta.area;
+      return req;
+    });
+  };
+
+  const handleBulkSubmit = async () => {
+    const requests = buildRequests();
+    setIsSending(true);
+    setShowProgress(true);
+
+    // Initialize batch statuses
+    const batchSize = 10;
+    const batchCount = Math.ceil(requests.length / batchSize);
+    const initialBatches: BatchStatus[] = Array.from({ length: batchCount }, (_, i) => ({
+      batchIndex: i,
+      items: requests.slice(i * batchSize, (i + 1) * batchSize),
+      status: "pending" as const,
+    }));
+    setBatches(initialBatches);
+
+    const { success, failed } = await bulkCreateBatched(requests, batchSize, (_idx, status) => {
+      setBatches((prev) => prev.map((b) => (b.batchIndex === status.batchIndex ? status : b)));
+    });
+
+    setIsSending(false);
+    queryClient.invalidateQueries({ queryKey: ["spots"] });
+
+    if (failed === 0) {
+      setResult({ total: requests.length, success });
+      onComplete();
+    }
+  };
+
+  const handleRetry = async (batchIndex: number) => {
+    const batch = batches.find((b) => b.batchIndex === batchIndex);
+    if (!batch) return;
+
+    setIsSending(true);
+    setBatches((prev) =>
+      prev.map((b) => (b.batchIndex === batchIndex ? { ...b, status: "processing" as const } : b)),
+    );
+
+    const { success } = await bulkCreateBatched(batch.items, batch.items.length, (_idx, status) => {
+      setBatches((prev) =>
+        prev.map((b) => (b.batchIndex === batchIndex ? { ...status, batchIndex } : b)),
+      );
+    });
+
+    setIsSending(false);
+    queryClient.invalidateQueries({ queryKey: ["spots"] });
+
+    // Check if all batches are now done
+    setBatches((prev) => {
+      const allDone = prev.every((b) => b.status === "success" || (b.batchIndex !== batchIndex && b.status === "failed"));
+      if (allDone && !prev.some((b) => b.status === "failed")) {
+        const totalSuccess = prev.reduce((sum, b) => sum + (b.successCount ?? b.items.length), 0);
+        setResult({ total: places.length, success: totalSuccess });
+        onComplete();
+      }
+      return prev;
+    });
   };
 
   if (places.length === 0) {
@@ -60,26 +121,19 @@ export default function BulkCurationPanel({ places, onComplete, onRemove }: Bulk
         일괄 등록 ({places.length}개 선택)
       </h3>
 
-      {/* 기본 crewNote */}
-      <div className="mb-4">
-        <label className="block text-xs font-medium text-gray-700 mb-1">
-          기본 crewNote (선택)
-        </label>
-        <input
-          type="text"
-          value={defaultNote}
-          onChange={(e) => setDefaultNote(e.target.value)}
-          placeholder="모든 Spot에 적용할 기본 코멘트"
-          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-        />
-      </div>
+      {/* 일괄 메타 설정 */}
+      <BulkActionBar
+        bulkMeta={bulkMeta}
+        onChange={setBulkMeta}
+        selectedCount={places.length}
+      />
 
       {/* 선택된 Place 목록 */}
       <div className="space-y-3 max-h-[400px] overflow-y-auto mb-4">
         {places.map((place) => {
           const key = `${place.provider}-${place.placeId}`;
-          const area = extractAreaFromAddress(place.address);
-          const cat = mapPlaceCategoryToSpotCategory(place.category);
+          const area = bulkMeta.area || extractAreaFromAddress(place.address);
+          const cat = bulkMeta.category || mapPlaceCategoryToSpotCategory(place.category);
           return (
             <div key={key} className="border border-gray-100 rounded-md p-3">
               <div className="flex items-start justify-between mb-2">
@@ -101,7 +155,7 @@ export default function BulkCurationPanel({ places, onComplete, onRemove }: Bulk
                 type="text"
                 value={notes[key] ?? ""}
                 onChange={(e) => updateNote(key, e.target.value)}
-                placeholder={defaultNote || "개별 crewNote (선택)"}
+                placeholder={bulkMeta.crewNote || "개별 crewNote (선택)"}
                 className="w-full px-2 py-1.5 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
@@ -118,14 +172,22 @@ export default function BulkCurationPanel({ places, onComplete, onRemove }: Bulk
           전체 취소
         </button>
         <button
-          onClick={() => mutation.mutate()}
-          disabled={mutation.isPending}
+          onClick={handleBulkSubmit}
+          disabled={isSending}
           className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {mutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-          {mutation.isPending ? "등록 중..." : `${places.length}개 일괄 등록`}
+          {isSending && <Loader2 className="h-4 w-4 animate-spin" />}
+          {isSending ? "등록 중..." : `${places.length}개 일괄 등록`}
         </button>
       </div>
+
+      {/* 진행 모달 */}
+      <BulkProgressModal
+        isOpen={showProgress}
+        batches={batches}
+        onRetry={handleRetry}
+        onClose={() => setShowProgress(false)}
+      />
 
       {/* 결과 토스트 */}
       {result && (

@@ -322,6 +322,23 @@ export interface UserAdminItem {
   suspendedAt: string | null;
 }
 
+// ── Bulk Curation ──
+
+export interface BulkMeta {
+  tags: string[];
+  category: SpotCategory | null;
+  area: string | null;
+  crewNote: string;
+}
+
+export interface BatchStatus {
+  batchIndex: number;
+  items: CreateSpotRequest[];
+  status: "pending" | "processing" | "success" | "failed";
+  error?: string;
+  successCount?: number;
+}
+
 // ── Spring Page (pagination) ──
 
 export interface SpringPage<T> {

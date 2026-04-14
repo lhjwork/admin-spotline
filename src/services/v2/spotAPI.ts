@@ -5,6 +5,7 @@ import type {
   UpdateSpotRequest,
   SpringPage,
   SpotCategory,
+  BatchStatus,
 } from "../../types/v2";
 
 export interface SpotListParams {
@@ -38,3 +39,44 @@ export const spotAPI = {
   bulkCreate: (data: CreateSpotRequest[]) =>
     apiClient.post<SpotDetailResponse[]>("/api/v2/spots/bulk", data),
 };
+
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
+}
+
+export async function bulkCreateBatched(
+  requests: CreateSpotRequest[],
+  batchSize: number = 10,
+  onBatchProgress: (batchIndex: number, status: BatchStatus) => void,
+): Promise<{ success: number; failed: number; failedBatches: number[] }> {
+  const chunks = chunkArray(requests, batchSize);
+  let success = 0;
+  let failed = 0;
+  const failedBatches: number[] = [];
+
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i]!;
+    onBatchProgress(i, { batchIndex: i, items: chunk, status: "processing" });
+    try {
+      const result = await spotAPI.bulkCreate(chunk);
+      const count = Array.isArray(result.data) ? result.data.length : chunk.length;
+      success += count;
+      onBatchProgress(i, { batchIndex: i, items: chunk, status: "success", successCount: count });
+    } catch (error) {
+      failed += chunk.length;
+      failedBatches.push(i);
+      onBatchProgress(i, {
+        batchIndex: i,
+        items: chunk,
+        status: "failed",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  return { success, failed, failedBatches };
+}
