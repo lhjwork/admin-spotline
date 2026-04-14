@@ -14,6 +14,7 @@ import PartnerDetail from "./pages/PartnerDetail";
 import PartnerEdit from "./pages/PartnerEdit";
 import ModerationQueue from "./pages/ModerationQueue";
 import BlogManagement from "./pages/BlogManagement";
+import Analytics from "./pages/Analytics";
 import UserManagement from "./pages/UserManagement";
 import BlogDetail from "./pages/BlogDetail";
 import { ReactNode } from "react";
@@ -65,6 +66,9 @@ function App() {
           <Route path="spotlines/new" element={<SpotLineBuilder />} />
           <Route path="spotlines/:slug/edit" element={<SpotLineBuilder />} />
           <Route path="spotlines" element={<SpotLineManagement />} />
+          <Route path="analytics" element={
+            <ProtectedRoute requiredRole="admin"><Analytics /></ProtectedRoute>
+          } />
           <Route path="blogs" element={
             <ProtectedRoute requiredRole="admin"><BlogManagement /></ProtectedRoute>
           } />

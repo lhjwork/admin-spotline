@@ -2,7 +2,7 @@ import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
   LayoutDashboard, Search, MapPin, Route, List,
-  Users, LogOut, Menu, X, Store, Shield, FileText, LucideIcon,
+  Users, LogOut, Menu, X, Store, Shield, FileText, BarChart3, LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -20,6 +20,9 @@ interface NavigationItem {
 
 const navigation: NavigationItem[] = [
   { name: "대시보드", href: "/dashboard", icon: LayoutDashboard },
+
+  // 분석 섹션
+  { name: "분석", href: "/analytics", icon: BarChart3, section: "analytics", minRole: "admin" as AdminRole },
 
   // 큐레이션 섹션
   { name: "Spot 큐레이션", href: "/curation", icon: Search, section: "curation" },
@@ -110,6 +113,7 @@ export default function Layout() {
       }).map((item) => (
         <NavLink key={item.name} item={item} onClick={onNav} />
       ))}
+      <NavSection title="분석" section="analytics" onClick={onNav} />
       <NavSection title="큐레이션" section="curation" onClick={onNav} />
       <NavSection title="콘텐츠" section="content" onClick={onNav} />
       <NavSection title="파트너" section="partner" onClick={onNav} />
