@@ -9,3 +9,4 @@
 | admin-analytics-bi | 100% | 2026-04-14 | plan, design, analysis, report |
 | admin-spot-bulk-curation | 98% | 2026-04-14 | plan, analysis, report |
 | spot-duplicate-detection | 100% | 2026-04-14 | plan, design, analysis, report |
+| user-visit-checkin | 100% | 2026-04-15 | plan, design, analysis, report |
