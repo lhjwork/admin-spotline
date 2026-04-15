@@ -72,6 +72,27 @@ export interface PeriodComparison {
   likesChangeRate: number;
 }
 
+export interface CheckinStats {
+  totalCheckins: number;
+  verifiedCheckins: number;
+  verificationRate: number;
+  uniqueUsers: number;
+  uniqueSpots: number;
+}
+
+export interface TopSpotCheckin {
+  spotId: string;
+  spotTitle: string;
+  spotSlug: string;
+  checkinCount: number;
+  verifiedCount: number;
+}
+
+export interface CheckinPatternItem {
+  day: string;
+  count: number;
+}
+
 export const analyticsAPI = {
   getStats: () =>
     apiClient.get<PlatformStats>("/admin/analytics/stats").then((r) => r.data),
@@ -115,6 +136,27 @@ export const analyticsAPI = {
   getPeriodComparison: (from: string, to: string) =>
     apiClient
       .get<PeriodComparison>("/admin/analytics/period-comparison", {
+        params: { from, to },
+      })
+      .then((r) => r.data),
+
+  getCheckinStats: (from: string, to: string) =>
+    apiClient
+      .get<CheckinStats>("/admin/checkins/stats", {
+        params: { from, to },
+      })
+      .then((r) => r.data),
+
+  getTopCheckinSpots: (limit = 10) =>
+    apiClient
+      .get<TopSpotCheckin[]>("/admin/checkins/top-spots", {
+        params: { limit },
+      })
+      .then((r) => r.data),
+
+  getCheckinPattern: (from: string, to: string) =>
+    apiClient
+      .get<CheckinPatternItem[]>("/admin/checkins/pattern", {
         params: { from, to },
       })
       .then((r) => r.data),

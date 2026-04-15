@@ -15,6 +15,7 @@ import PartnerEdit from "./pages/PartnerEdit";
 import ModerationQueue from "./pages/ModerationQueue";
 import BlogManagement from "./pages/BlogManagement";
 import Analytics from "./pages/Analytics";
+import CheckinAnalytics from "./pages/CheckinAnalytics";
 import UserManagement from "./pages/UserManagement";
 import BlogDetail from "./pages/BlogDetail";
 import { ReactNode } from "react";
@@ -68,6 +69,9 @@ function App() {
           <Route path="spotlines" element={<SpotLineManagement />} />
           <Route path="analytics" element={
             <ProtectedRoute requiredRole="admin"><Analytics /></ProtectedRoute>
+          } />
+          <Route path="checkin-analytics" element={
+            <ProtectedRoute requiredRole="admin"><CheckinAnalytics /></ProtectedRoute>
           } />
           <Route path="blogs" element={
             <ProtectedRoute requiredRole="admin"><BlogManagement /></ProtectedRoute>

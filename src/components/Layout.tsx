@@ -1,7 +1,7 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
-  LayoutDashboard, Search, MapPin, Route, List,
+  LayoutDashboard, Search, MapPin, Route, List, CheckCircle,
   Users, LogOut, Menu, X, Store, Shield, FileText, BarChart3, LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
@@ -23,6 +23,7 @@ const navigation: NavigationItem[] = [
 
   // 분석 섹션
   { name: "분석", href: "/analytics", icon: BarChart3, section: "analytics", minRole: "admin" as AdminRole },
+  { name: "체크인 분석", href: "/checkin-analytics", icon: CheckCircle, section: "analytics", minRole: "admin" as AdminRole },
 
   // 큐레이션 섹션
   { name: "Spot 큐레이션", href: "/curation", icon: Search, section: "curation" },
