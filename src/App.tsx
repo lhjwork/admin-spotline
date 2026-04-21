@@ -13,9 +13,11 @@ import PartnerRegistration from "./pages/PartnerRegistration";
 import PartnerDetail from "./pages/PartnerDetail";
 import PartnerEdit from "./pages/PartnerEdit";
 import ModerationQueue from "./pages/ModerationQueue";
+import UserContentReview from "./pages/UserContentReview";
 import BlogManagement from "./pages/BlogManagement";
 import Analytics from "./pages/Analytics";
 import CheckinAnalytics from "./pages/CheckinAnalytics";
+import ShareAnalytics from "./pages/ShareAnalytics";
 import UserManagement from "./pages/UserManagement";
 import BlogDetail from "./pages/BlogDetail";
 import { ReactNode } from "react";
@@ -72,6 +74,9 @@ function App() {
           } />
           <Route path="checkin-analytics" element={
             <ProtectedRoute requiredRole="admin"><CheckinAnalytics /></ProtectedRoute>
+          }/>
+          <Route path="share-analytics" element={
+            <ProtectedRoute requiredRole="admin"><ShareAnalytics /></ProtectedRoute>
           } />
           <Route path="blogs" element={
             <ProtectedRoute requiredRole="admin"><BlogManagement /></ProtectedRoute>
@@ -93,6 +98,9 @@ function App() {
           } />
           <Route path="users" element={
             <ProtectedRoute requiredRole="admin"><UserManagement /></ProtectedRoute>
+          } />
+          <Route path="user-content-review" element={
+            <ProtectedRoute requiredRole="admin"><UserContentReview /></ProtectedRoute>
           } />
           <Route path="moderation" element={
             <ProtectedRoute requiredRole="admin"><ModerationQueue /></ProtectedRoute>

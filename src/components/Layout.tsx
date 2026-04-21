@@ -1,14 +1,15 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
-  LayoutDashboard, Search, MapPin, Route, List, CheckCircle,
-  Users, LogOut, Menu, X, Store, Shield, FileText, BarChart3, LucideIcon,
+  LayoutDashboard, Search, MapPin, Route, List, CheckCircle, Share2,
+  Users, LogOut, Menu, X, Store, Shield, FileText, BarChart3, UserCheck, LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { AdminRole } from "../types";
 import { hasMinRole, getRoleLabel } from "../utils/roles";
 import { reportAPI } from "../services/v2/reportAPI";
+import { spotAPI } from "../services/v2/spotAPI";
 
 interface NavigationItem {
   name: string;
@@ -24,6 +25,7 @@ const navigation: NavigationItem[] = [
   // 분석 섹션
   { name: "분석", href: "/analytics", icon: BarChart3, section: "analytics", minRole: "admin" as AdminRole },
   { name: "체크인 분석", href: "/checkin-analytics", icon: CheckCircle, section: "analytics", minRole: "admin" as AdminRole },
+  { name: "공유 분석", href: "/share-analytics", icon: Share2, section: "analytics", minRole: "admin" as AdminRole },
 
   // 큐레이션 섹션
   { name: "Spot 큐레이션", href: "/curation", icon: Search, section: "curation" },
@@ -38,6 +40,7 @@ const navigation: NavigationItem[] = [
   { name: "파트너 관리", href: "/partners", icon: Store, section: "partner", minRole: "admin" },
 
   // 시스템 섹션
+  { name: "유저 콘텐츠 검토", href: "/user-content-review", icon: UserCheck, section: "system", minRole: "admin" },
   { name: "유저 관리", href: "/users", icon: Users, section: "system", minRole: "admin" },
   { name: "모더레이션", href: "/moderation", icon: Shield, section: "system", minRole: "admin" },
   { name: "어드민 관리", href: "/admins", icon: Users, section: "system", minRole: "super_admin" },
@@ -103,7 +106,17 @@ export default function Layout() {
     refetchInterval: 60000,
   });
 
-  const systemBadgeMap: Record<string, number> = pendingCount ? { "/moderation": pendingCount } : {};
+  const { data: pendingSpotsCount } = useQuery({
+    queryKey: ["pending-spots-count"],
+    queryFn: () => spotAPI.getPendingCount(),
+    select: (res) => res.data.count,
+    refetchInterval: 60000,
+  });
+
+  const systemBadgeMap: Record<string, number> = {
+    ...(pendingCount ? { "/moderation": pendingCount } : {}),
+    ...(pendingSpotsCount ? { "/user-content-review": pendingSpotsCount } : {}),
+  };
 
   const sidebarContent = (onNav?: () => void) => (
     <>

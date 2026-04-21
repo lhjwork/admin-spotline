@@ -5,6 +5,7 @@ import type {
   UpdateSpotRequest,
   SpringPage,
   SpotCategory,
+  SpotStatus,
   BatchStatus,
 } from "../../types/v2";
 
@@ -38,6 +39,23 @@ export const spotAPI = {
 
   bulkCreate: (data: CreateSpotRequest[]) =>
     apiClient.post<SpotDetailResponse[]>("/api/v2/spots/bulk", data),
+
+  // 유저 콘텐츠 검토
+  getPendingSpots: (params: { page?: number; size?: number } = {}) => {
+    const { page = 1, size = 20 } = params;
+    return apiClient.get<SpringPage<SpotDetailResponse>>("/api/v2/spots/pending", {
+      params: { page: page - 1, size },
+    });
+  },
+
+  approveSpot: (slug: string) =>
+    apiClient.put<SpotDetailResponse>(`/api/v2/spots/${slug}/approve`),
+
+  rejectSpot: (slug: string, reason: string) =>
+    apiClient.put<SpotDetailResponse>(`/api/v2/spots/${slug}/reject`, { reason }),
+
+  getPendingCount: () =>
+    apiClient.get<{ count: number }>("/api/v2/spots/pending/count"),
 };
 
 function chunkArray<T>(arr: T[], size: number): T[][] {

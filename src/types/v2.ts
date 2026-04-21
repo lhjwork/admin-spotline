@@ -9,6 +9,8 @@ export type SpotCategory =
 
 export type SpotSource = "CREW" | "USER" | "QR";
 
+export type SpotStatus = "PENDING" | "APPROVED" | "REJECTED";
+
 export type SpotLineTheme =
   | "DATE" | "TRAVEL" | "WALK" | "HANGOUT"
   | "FOOD_TOUR" | "CAFE_TOUR" | "CULTURE";
@@ -87,6 +89,10 @@ export interface SpotDetailResponse {
   creatorName: string | null;
   createdAt: string;
   placeInfo: PlaceInfo | null;
+  status: SpotStatus | null;
+  rejectionReason: string | null;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
 }
 
 export interface CreateSpotRequest {
