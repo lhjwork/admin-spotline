@@ -56,6 +56,10 @@ function toSpotDetail(rs: SpotLineSpotDetail): SpotDetailResponse {
     creatorName: null,
     createdAt: "",
     placeInfo: null,
+    status: null,
+    rejectionReason: null,
+    reviewedAt: null,
+    reviewedBy: null,
   };
 }
 
