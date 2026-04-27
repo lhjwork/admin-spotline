@@ -14,4 +14,17 @@ export default defineConfig({
       "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["react", "react-dom", "react-router-dom"],
+          charts: ["recharts"],
+          query: ["@tanstack/react-query"],
+          supabase: ["@supabase/supabase-js"],
+          dnd: ["@dnd-kit/core", "@dnd-kit/sortable", "@dnd-kit/utilities"],
+        },
+      },
+    },
+  },
 });

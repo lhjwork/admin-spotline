@@ -1,28 +1,38 @@
+import { lazy, Suspense, ReactNode } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import SpotCuration from "./pages/SpotCuration";
-import SpotManagement from "./pages/SpotManagement";
-import SpotLineBuilder from "./pages/SpotLineBuilder";
-import SpotLineManagement from "./pages/SpotLineManagement";
-import Admins from "./pages/Admins";
-import PartnerManagement from "./pages/PartnerManagement";
-import PartnerRegistration from "./pages/PartnerRegistration";
-import PartnerDetail from "./pages/PartnerDetail";
-import PartnerEdit from "./pages/PartnerEdit";
-import ModerationQueue from "./pages/ModerationQueue";
-import UserContentReview from "./pages/UserContentReview";
-import BlogManagement from "./pages/BlogManagement";
-import Analytics from "./pages/Analytics";
-import CheckinAnalytics from "./pages/CheckinAnalytics";
-import ShareAnalytics from "./pages/ShareAnalytics";
-import UserManagement from "./pages/UserManagement";
-import BlogDetail from "./pages/BlogDetail";
-import { ReactNode } from "react";
 import type { AdminRole } from "./types";
 import { hasMinRole } from "./utils/roles";
+
+// Lazy-loaded pages
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const SpotCuration = lazy(() => import("./pages/SpotCuration"));
+const SpotManagement = lazy(() => import("./pages/SpotManagement"));
+const SpotLineBuilder = lazy(() => import("./pages/SpotLineBuilder"));
+const SpotLineManagement = lazy(() => import("./pages/SpotLineManagement"));
+const Admins = lazy(() => import("./pages/Admins"));
+const PartnerManagement = lazy(() => import("./pages/PartnerManagement"));
+const PartnerRegistration = lazy(() => import("./pages/PartnerRegistration"));
+const PartnerDetail = lazy(() => import("./pages/PartnerDetail"));
+const PartnerEdit = lazy(() => import("./pages/PartnerEdit"));
+const ModerationQueue = lazy(() => import("./pages/ModerationQueue"));
+const UserContentReview = lazy(() => import("./pages/UserContentReview"));
+const BlogManagement = lazy(() => import("./pages/BlogManagement"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const CheckinAnalytics = lazy(() => import("./pages/CheckinAnalytics"));
+const ShareAnalytics = lazy(() => import("./pages/ShareAnalytics"));
+const UserManagement = lazy(() => import("./pages/UserManagement"));
+const BlogDetail = lazy(() => import("./pages/BlogDetail"));
+
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+    </div>
+  );
+}
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -63,50 +73,50 @@ function App() {
           </ProtectedRoute>
         }>
           <Route index element={<Navigate to="/dashboard" />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="curation" element={<SpotCuration />} />
-          <Route path="spots" element={<SpotManagement />} />
-          <Route path="spotlines/new" element={<SpotLineBuilder />} />
-          <Route path="spotlines/:slug/edit" element={<SpotLineBuilder />} />
-          <Route path="spotlines" element={<SpotLineManagement />} />
+          <Route path="dashboard" element={<Suspense fallback={<LoadingSpinner />}><Dashboard /></Suspense>} />
+          <Route path="curation" element={<Suspense fallback={<LoadingSpinner />}><SpotCuration /></Suspense>} />
+          <Route path="spots" element={<Suspense fallback={<LoadingSpinner />}><SpotManagement /></Suspense>} />
+          <Route path="spotlines/new" element={<Suspense fallback={<LoadingSpinner />}><SpotLineBuilder /></Suspense>} />
+          <Route path="spotlines/:slug/edit" element={<Suspense fallback={<LoadingSpinner />}><SpotLineBuilder /></Suspense>} />
+          <Route path="spotlines" element={<Suspense fallback={<LoadingSpinner />}><SpotLineManagement /></Suspense>} />
           <Route path="analytics" element={
-            <ProtectedRoute requiredRole="admin"><Analytics /></ProtectedRoute>
+            <ProtectedRoute requiredRole="admin"><Suspense fallback={<LoadingSpinner />}><Analytics /></Suspense></ProtectedRoute>
           } />
           <Route path="checkin-analytics" element={
-            <ProtectedRoute requiredRole="admin"><CheckinAnalytics /></ProtectedRoute>
+            <ProtectedRoute requiredRole="admin"><Suspense fallback={<LoadingSpinner />}><CheckinAnalytics /></Suspense></ProtectedRoute>
           }/>
           <Route path="share-analytics" element={
-            <ProtectedRoute requiredRole="admin"><ShareAnalytics /></ProtectedRoute>
+            <ProtectedRoute requiredRole="admin"><Suspense fallback={<LoadingSpinner />}><ShareAnalytics /></Suspense></ProtectedRoute>
           } />
           <Route path="blogs" element={
-            <ProtectedRoute requiredRole="admin"><BlogManagement /></ProtectedRoute>
+            <ProtectedRoute requiredRole="admin"><Suspense fallback={<LoadingSpinner />}><BlogManagement /></Suspense></ProtectedRoute>
           } />
           <Route path="blogs/:slug" element={
-            <ProtectedRoute requiredRole="admin"><BlogDetail /></ProtectedRoute>
+            <ProtectedRoute requiredRole="admin"><Suspense fallback={<LoadingSpinner />}><BlogDetail /></Suspense></ProtectedRoute>
           } />
           <Route path="partners" element={
-            <ProtectedRoute requiredRole="admin"><PartnerManagement /></ProtectedRoute>
+            <ProtectedRoute requiredRole="admin"><Suspense fallback={<LoadingSpinner />}><PartnerManagement /></Suspense></ProtectedRoute>
           } />
           <Route path="partners/new" element={
-            <ProtectedRoute requiredRole="admin"><PartnerRegistration /></ProtectedRoute>
+            <ProtectedRoute requiredRole="admin"><Suspense fallback={<LoadingSpinner />}><PartnerRegistration /></Suspense></ProtectedRoute>
           } />
           <Route path="partners/:id/edit" element={
-            <ProtectedRoute requiredRole="admin"><PartnerEdit /></ProtectedRoute>
+            <ProtectedRoute requiredRole="admin"><Suspense fallback={<LoadingSpinner />}><PartnerEdit /></Suspense></ProtectedRoute>
           } />
           <Route path="partners/:id" element={
-            <ProtectedRoute requiredRole="admin"><PartnerDetail /></ProtectedRoute>
+            <ProtectedRoute requiredRole="admin"><Suspense fallback={<LoadingSpinner />}><PartnerDetail /></Suspense></ProtectedRoute>
           } />
           <Route path="users" element={
-            <ProtectedRoute requiredRole="admin"><UserManagement /></ProtectedRoute>
+            <ProtectedRoute requiredRole="admin"><Suspense fallback={<LoadingSpinner />}><UserManagement /></Suspense></ProtectedRoute>
           } />
           <Route path="user-content-review" element={
-            <ProtectedRoute requiredRole="admin"><UserContentReview /></ProtectedRoute>
+            <ProtectedRoute requiredRole="admin"><Suspense fallback={<LoadingSpinner />}><UserContentReview /></Suspense></ProtectedRoute>
           } />
           <Route path="moderation" element={
-            <ProtectedRoute requiredRole="admin"><ModerationQueue /></ProtectedRoute>
+            <ProtectedRoute requiredRole="admin"><Suspense fallback={<LoadingSpinner />}><ModerationQueue /></Suspense></ProtectedRoute>
           } />
           <Route path="admins" element={
-            <ProtectedRoute requiredRole="super_admin"><Admins /></ProtectedRoute>
+            <ProtectedRoute requiredRole="super_admin"><Suspense fallback={<LoadingSpinner />}><Admins /></Suspense></ProtectedRoute>
           } />
         </Route>
       </Routes>
