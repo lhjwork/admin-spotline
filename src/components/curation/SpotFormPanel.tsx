@@ -281,10 +281,10 @@ export default function SpotFormPanel({ onSubmit, saving, onLocationChange }: Sp
             type="button"
             onClick={() => {
               const cat = watch("category");
-              const defaults = AUTO_TAG_MAP[cat] || AUTO_TAG_MAP.OTHER;
-              if (!watch("bestTimeOfDay")) setValue("bestTimeOfDay", defaults.timeOfDay);
-              if (!watch("bestWeatherCondition")) setValue("bestWeatherCondition", defaults.weather);
-              if (!watch("isIndoor")) setValue("isIndoor", defaults.isIndoor);
+              const defaults = AUTO_TAG_MAP[cat] ?? AUTO_TAG_MAP.OTHER;
+              if (defaults && !watch("bestTimeOfDay")) setValue("bestTimeOfDay", defaults.timeOfDay);
+              if (defaults && !watch("bestWeatherCondition")) setValue("bestWeatherCondition", defaults.weather);
+              if (defaults && !watch("isIndoor")) setValue("isIndoor", defaults.isIndoor);
             }}
             className="text-xs px-2 py-1 bg-sky-100 hover:bg-sky-200 text-sky-700 rounded transition-colors"
           >

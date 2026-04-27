@@ -60,6 +60,9 @@ function toSpotDetail(rs: SpotLineSpotDetail): SpotDetailResponse {
     rejectionReason: null,
     reviewedAt: null,
     reviewedBy: null,
+    bestTimeOfDay: null,
+    bestWeatherCondition: null,
+    isIndoor: null,
   };
 }
 
