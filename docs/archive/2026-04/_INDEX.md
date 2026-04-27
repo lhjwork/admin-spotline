@@ -1,12 +1,5 @@
 # Archive Index — 2026-04
 
-| Feature | Match Rate | Archived | Documents |
-|---------|:----------:|----------|-----------|
-| admin-role-enforcement | 97% | 2026-04-03 | plan, design, analysis, report |
-| spot-route-search | 100% | 2026-04-03 | plan, design, analysis, report |
-| admin-tech-modernization | 100% | 2026-04-11 | plan, design, analysis, report |
-| admin-legacy-cleanup | 100% | 2026-04-04 | plan, design, analysis, report |
-| admin-analytics-bi | 100% | 2026-04-14 | plan, design, analysis, report |
-| admin-spot-bulk-curation | 98% | 2026-04-14 | plan, analysis, report |
-| spot-duplicate-detection | 100% | 2026-04-14 | plan, design, analysis, report |
-| user-visit-checkin | 100% | 2026-04-15 | plan, design, analysis, report |
+| Feature | Match Rate | Iterations | Archived | Documents |
+|---------|-----------|------------|----------|-----------|
+| curated-collections | 100% | 0 | 2026-04-27 | plan, design |
