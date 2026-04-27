@@ -25,6 +25,8 @@ const CheckinAnalytics = lazy(() => import("./pages/CheckinAnalytics"));
 const ShareAnalytics = lazy(() => import("./pages/ShareAnalytics"));
 const UserManagement = lazy(() => import("./pages/UserManagement"));
 const BlogDetail = lazy(() => import("./pages/BlogDetail"));
+const CollectionManagement = lazy(() => import("./pages/CollectionManagement"));
+const CollectionEditor = lazy(() => import("./pages/CollectionEditor"));
 
 function LoadingSpinner() {
   return (
@@ -79,6 +81,9 @@ function App() {
           <Route path="spotlines/new" element={<Suspense fallback={<LoadingSpinner />}><SpotLineBuilder /></Suspense>} />
           <Route path="spotlines/:slug/edit" element={<Suspense fallback={<LoadingSpinner />}><SpotLineBuilder /></Suspense>} />
           <Route path="spotlines" element={<Suspense fallback={<LoadingSpinner />}><SpotLineManagement /></Suspense>} />
+          <Route path="collections" element={<Suspense fallback={<LoadingSpinner />}><CollectionManagement /></Suspense>} />
+          <Route path="collections/new" element={<Suspense fallback={<LoadingSpinner />}><CollectionEditor /></Suspense>} />
+          <Route path="collections/:slug/edit" element={<Suspense fallback={<LoadingSpinner />}><CollectionEditor /></Suspense>} />
           <Route path="analytics" element={
             <ProtectedRoute requiredRole="admin"><Suspense fallback={<LoadingSpinner />}><Analytics /></Suspense></ProtectedRoute>
           } />

@@ -2,7 +2,7 @@ import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
   LayoutDashboard, Search, MapPin, Route, List, CheckCircle, Share2,
-  Users, LogOut, Menu, X, Store, Shield, FileText, BarChart3, UserCheck, LucideIcon,
+  Users, LogOut, Menu, X, Store, Shield, FileText, BarChart3, UserCheck, FolderOpen, LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -32,6 +32,7 @@ const navigation: NavigationItem[] = [
   { name: "Spot 관리", href: "/spots", icon: MapPin, section: "curation" },
   { name: "SpotLine 빌더", href: "/spotlines/new", icon: Route, section: "curation" },
   { name: "SpotLine 관리", href: "/spotlines", icon: List, section: "curation" },
+  { name: "컬렉션 관리", href: "/collections", icon: FolderOpen, section: "curation" },
 
   // 콘텐츠 섹션
   { name: "블로그 관리", href: "/blogs", icon: FileText, section: "content", minRole: "admin" },
