@@ -1,10 +1,40 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Loader2 } from "lucide-react";
-import type { CreateSpotRequest, SpotCategory } from "../../types/v2";
+import type { CreateSpotRequest, SpotCategory, TimeOfDay, WeatherCondition } from "../../types/v2";
 import { AREAS, SPOT_CATEGORIES, extractAreaFromAddress } from "../../constants";
 import DaumAddressEmbed from "../DaumAddressEmbed";
 import SpotMediaUpload, { type MediaItem } from "./SpotMediaUpload";
+
+const TIME_OF_DAY_LABELS: Record<string, string> = {
+  DAWN: "새벽",
+  MORNING: "오전",
+  AFTERNOON: "오후",
+  SUNSET: "일몰",
+  NIGHT: "밤",
+  ANY: "상관없음",
+};
+
+const WEATHER_LABELS: Record<string, string> = {
+  SUNNY: "맑음",
+  CLOUDY: "흐림",
+  RAINY: "비",
+  SNOWY: "눈",
+  ANY: "상관없음",
+};
+
+const AUTO_TAG_MAP: Record<string, { timeOfDay: string; weather: string; isIndoor: boolean }> = {
+  CAFE: { timeOfDay: "AFTERNOON", weather: "ANY", isIndoor: true },
+  RESTAURANT: { timeOfDay: "AFTERNOON", weather: "ANY", isIndoor: true },
+  BAR: { timeOfDay: "NIGHT", weather: "ANY", isIndoor: true },
+  NATURE: { timeOfDay: "MORNING", weather: "SUNNY", isIndoor: false },
+  CULTURE: { timeOfDay: "AFTERNOON", weather: "ANY", isIndoor: true },
+  EXHIBITION: { timeOfDay: "AFTERNOON", weather: "ANY", isIndoor: true },
+  WALK: { timeOfDay: "AFTERNOON", weather: "SUNNY", isIndoor: false },
+  ACTIVITY: { timeOfDay: "MORNING", weather: "SUNNY", isIndoor: false },
+  SHOPPING: { timeOfDay: "AFTERNOON", weather: "ANY", isIndoor: true },
+  OTHER: { timeOfDay: "ANY", weather: "ANY", isIndoor: false },
+};
 
 interface SpotFormPanelProps {
   onSubmit: (data: CreateSpotRequest) => Promise<void>;
@@ -31,6 +61,9 @@ interface FormValues {
   websiteUrl: string;
   naverPlaceId: string;
   kakaoPlaceId: string;
+  bestTimeOfDay: string;
+  bestWeatherCondition: string;
+  isIndoor: boolean;
 }
 
 export default function SpotFormPanel({ onSubmit, saving, onLocationChange }: SpotFormPanelProps) {
@@ -63,6 +96,9 @@ export default function SpotFormPanel({ onSubmit, saving, onLocationChange }: Sp
       websiteUrl: "",
       naverPlaceId: "",
       kakaoPlaceId: "",
+      bestTimeOfDay: "",
+      bestWeatherCondition: "",
+      isIndoor: false,
     },
   });
 
@@ -141,6 +177,9 @@ export default function SpotFormPanel({ onSubmit, saving, onLocationChange }: Sp
           }))
         : undefined,
       creatorName: "crew",
+      bestTimeOfDay: (values.bestTimeOfDay as TimeOfDay) || undefined,
+      bestWeatherCondition: (values.bestWeatherCondition as WeatherCondition) || undefined,
+      isIndoor: values.isIndoor || undefined,
     };
     await onSubmit(req);
     reset();
@@ -232,6 +271,60 @@ export default function SpotFormPanel({ onSubmit, saving, onLocationChange }: Sp
           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
         />
         {errors.crewNote && <p className="mt-1 text-xs text-red-500">{errors.crewNote.message}</p>}
+      </div>
+
+      {/* 날씨/시간 정보 */}
+      <div className="space-y-3 bg-sky-50 border border-sky-200 rounded-md p-3">
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium text-sky-700">날씨/시간 정보</label>
+          <button
+            type="button"
+            onClick={() => {
+              const cat = watch("category");
+              const defaults = AUTO_TAG_MAP[cat] || AUTO_TAG_MAP.OTHER;
+              if (!watch("bestTimeOfDay")) setValue("bestTimeOfDay", defaults.timeOfDay);
+              if (!watch("bestWeatherCondition")) setValue("bestWeatherCondition", defaults.weather);
+              if (!watch("isIndoor")) setValue("isIndoor", defaults.isIndoor);
+            }}
+            className="text-xs px-2 py-1 bg-sky-100 hover:bg-sky-200 text-sky-700 rounded transition-colors"
+          >
+            자동 태깅
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs text-sky-600 mb-1">추천 시간대</label>
+            <select
+              {...register("bestTimeOfDay")}
+              className="w-full px-3 py-2 border border-sky-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-sky-500"
+            >
+              <option value="">선택 안함</option>
+              {Object.entries(TIME_OF_DAY_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-sky-600 mb-1">추천 날씨</label>
+            <select
+              {...register("bestWeatherCondition")}
+              className="w-full px-3 py-2 border border-sky-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-sky-500"
+            >
+              <option value="">선택 안함</option>
+              {Object.entries(WEATHER_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <label className="flex items-center gap-2 text-sm text-sky-700">
+          <input
+            type="checkbox"
+            {...register("isIndoor")}
+            className="rounded border-sky-300 text-sky-600 focus:ring-sky-500"
+          />
+          실내 장소
+        </label>
       </div>
 
       {/* 미디어 */}

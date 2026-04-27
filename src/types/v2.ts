@@ -9,6 +9,10 @@ export type SpotCategory =
 
 export type SpotSource = "CREW" | "USER" | "QR";
 
+export type TimeOfDay = "DAWN" | "MORNING" | "AFTERNOON" | "SUNSET" | "NIGHT" | "ANY";
+
+export type WeatherCondition = "SUNNY" | "CLOUDY" | "RAINY" | "SNOWY" | "ANY";
+
 export type SpotStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export type SpotLineTheme =
@@ -93,6 +97,9 @@ export interface SpotDetailResponse {
   rejectionReason: string | null;
   reviewedAt: string | null;
   reviewedBy: string | null;
+  bestTimeOfDay: TimeOfDay | null;
+  bestWeatherCondition: WeatherCondition | null;
+  isIndoor: boolean | null;
 }
 
 export interface CreateSpotRequest {
@@ -117,6 +124,9 @@ export interface CreateSpotRequest {
   media?: string[];
   mediaItems?: MediaItemRequest[];
   creatorName?: string;
+  bestTimeOfDay?: TimeOfDay;
+  bestWeatherCondition?: WeatherCondition;
+  isIndoor?: boolean;
 }
 
 export interface UpdateSpotRequest {
@@ -133,6 +143,9 @@ export interface UpdateSpotRequest {
   tags?: string[];
   media?: string[];
   mediaItems?: MediaItemRequest[];
+  bestTimeOfDay?: TimeOfDay;
+  bestWeatherCondition?: WeatherCondition;
+  isIndoor?: boolean;
 }
 
 // ── SpotLine ──
